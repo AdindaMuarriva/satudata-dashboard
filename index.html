@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Dasbor Sosial & Kependudukan — Satu Data Aceh</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>
+  :root{
+    --bg: #f7f6f2;
+    --panel: #ffffff;
+    --panel-border: #e4e1d8;
+    --ink: #2b2b26;
+    --ink-dim: #6f6b60;
+    --accent: #2f7d6b;
+    --accent-soft: #e3f0ec;
+    --gold: #a97a1f;
+    --clay: #b8532f;
+    --grid-line: #ece9e0;
+    --font-display: 'Georgia','Noto Serif',serif;
+    --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); padding:28px; }
+  .wrap{ max-width:1280px; margin:0 auto; }
+
+  header{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;
+    border-bottom:1px solid var(--panel-border); padding-bottom:20px; margin-bottom:22px; }
+  header .titles h1{ font-family:var(--font-display); font-weight:400; font-size:26px; margin:0 0 6px 0; color:#1f1e1a; }
+  header .titles p{ margin:0; color:var(--ink-dim); font-size:13.5px; }
+
+  .status{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim);
+    background:var(--panel); border:1px solid var(--panel-border); padding:8px 14px; border-radius:20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  .dot.err{ background:var(--clay); animation:none; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(47,125,107,.45);} 70%{box-shadow:0 0 0 7px rgba(47,125,107,0);} 100%{box-shadow:0 0 0 0 rgba(47,125,107,0);} }
+
+  .banner{ background: var(--accent-soft); border:1px solid #cfe4dd; color:#1f5a4b; font-size:13px;
+    padding:10px 16px; border-radius:8px; margin-bottom:14px; line-height:1.55; }
+  .banner.warn{ background:#fbf1e2; border-color:#eed9b3; color:#7a5311; }
+  .banner b{ color:#164638; } .banner.warn b{ color:#5c3d0a; }
+  .banner code{ background:rgba(0,0,0,0.05); padding:1px 5px; border-radius:4px; }
+
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip{ background:var(--panel); border:1px solid var(--panel-border); color:var(--ink-dim);
+    padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition: all .15s; }
+  .chip:hover{ border-color:var(--accent); color:var(--accent); }
+  .chip.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .filters{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
+  .filters label{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--ink-dim);
+    text-transform:uppercase; letter-spacing:.06em; }
+  select, input{ background:var(--panel); color:var(--ink); border:1px solid var(--panel-border);
+    padding:8px 12px; border-radius:6px; font-size:13.5px; min-width:220px; }
+  select:focus, input:focus{ outline:none; border-color:var(--accent); }
+
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .stat-card{ background:var(--panel); border:1px solid var(--panel-border); border-radius:10px; padding:16px 18px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .stat-card .label{ font-size:11.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+  .stat-card .value{ font-family:var(--font-display); font-size:24px; color:var(--accent); }
+  .stat-card .sub-value{ font-size:11.5px; color:var(--ink-dim); margin-top:4px; }
+
+  .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+  .panel{ background:var(--panel); border:1px solid var(--panel-border); border-radius:10px; padding:18px 20px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .panel.wide{ grid-column:span 2; }
+  .panel h2{ font-family:var(--font-display); font-weight:400; font-size:16px; margin:0 0 2px 0; color:#1f1e1a; }
+  .panel .sub{ font-size:11.5px; color:var(--ink-dim); margin-bottom:10px; }
+
+  svg text{ fill:var(--ink-dim); font-size:11px; }
+  .axis path,.axis line{ stroke:var(--grid-line); }
+  .bar{ fill:var(--accent); transition:opacity .2s; } .bar:hover{ opacity:.75; }
+  .trend-line{ fill:none; stroke:var(--clay); stroke-width:2.5; }
+  .trend-dot{ fill:var(--clay); cursor:pointer; }
+  .trend-dot:hover{ r:6; }
+  .grid-line{ stroke:var(--grid-line); stroke-dasharray:2,3; }
+
+  .list{ list-style:none; margin:0; padding:0; max-height:320px; overflow-y:auto; }
+  .list li{ border-bottom:1px solid var(--panel-border); font-size:13px; }
+  .list a.row-link{ display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+    padding:9px 4px; text-decoration:none; color:inherit; }
+  .list a.row-link:hover{ background: var(--accent-soft); border-radius:4px; }
+  .list .name{ color:var(--ink); }
+  .list .meta{ color:var(--ink-dim); font-size:11.5px; white-space:nowrap; }
+  .badge{ display:inline-block; font-size:10px; padding:1px 7px; border-radius:10px; background:var(--accent-soft);
+    color:var(--accent); margin-right:6px; }
+
+  .back-link{ display:inline-block; margin-bottom:18px; color:var(--accent); text-decoration:none; font-size:13.5px; }
+  .back-link:hover{ text-decoration:underline; }
+  .detail-header h1{ font-family:var(--font-display); font-weight:400; font-size:24px; margin:0 0 6px 0; }
+  .detail-header p{ color:var(--ink-dim); font-size:13.5px; margin:0 0 12px 0; max-width:760px; }
+  .meta-pills{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .meta-pill{ background:var(--panel); border:1px solid var(--panel-border); border-radius:16px;
+    padding:4px 12px; font-size:12px; color:var(--ink-dim); }
+  .meta-pill b{ color:var(--ink); }
+
+  .big-number{ padding:20px 0; }
+  .big-number .value{ font-family:var(--font-display); font-size:44px; color:var(--accent); }
+  .big-number .unit{ font-size:18px; color:var(--ink-dim); margin-left:6px; }
+  .big-number .caption{ font-size:12.5px; color:var(--ink-dim); margin-top:6px; }
+
+  .map-region{ stroke:#fff; stroke-width:1; cursor:pointer; }
+  .map-region:hover{ opacity:0.85; }
+  .map-legend{ font-size:11px; }
+  .legend-title{ font-size:11px; fill:var(--ink-dim); }
+
+  .tooltip{ position:fixed; background:#1f1e1a; border:1px solid #33322c; color:#f7f6f2;
+    padding:8px 12px; border-radius:6px; font-size:12.5px; pointer-events:none; opacity:0; transition:opacity .15s; z-index:10; }
+
+  footer{ margin-top:24px; font-size:11.5px; color:var(--ink-dim); text-align:center; }
+
+  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } .panel.wide{ grid-column:span 1; } .stat-row{ grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="listView">
+    <header>
+      <div class="titles">
+        <h1>Sosial &amp; Kependudukan Aceh</h1>
+        <p>Dinas Sosial · Dinas Registrasi Kependudukan · Dinas Pemberdayaan Perempuan &amp; Perlindungan Anak — Satu Data Aceh</p>
+      </div>
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Menghubungkan...</span>
+      </div>
+    </header>
+
+    <!-- <div class="banner" id="modeBanner">
+      Terhubung via proxy lokal (<code>node proxy-server.js</code>).
+    </div> -->
+
+    <div class="chips" id="topicChips">
+      <span class="chip active" data-kw="">Semua</span>
+      <span class="chip" data-kw="sosial">Sosial</span>
+      <span class="chip" data-kw="kependudukan">Kependudukan</span>
+      <span class="chip" data-kw="perempuan">Perempuan &amp; Anak</span>
+      <span class="chip" data-kw="disabilitas">Disabilitas</span>
+      <span class="chip" data-kw="lansia">Lansia</span>
+      <span class="chip" data-kw="kemiskinan">Kemiskinan</span>
+    </div>
+
+    <div class="filters">
+      <label>Cari dataset
+        <input id="searchDataset" type="text" placeholder="mis. KIA, akta, bansos, PKH">
+      </label>
+      <label>Organisasi (OPD)
+        <select id="filterOrg"><option value="__all__">Semua OPD</option></select>
+      </label>
+    </div>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat-card"><div class="label">Dataset Ditemukan</div><div class="value" id="statMatched">—</div></div>
+      <div class="stat-card"><div class="label">Total Katalog Dataset</div><div class="value" id="statTotalDatasets">—</div></div>
+      <div class="stat-card"><div class="label">OPD Terkait Tema Ini</div><div class="value" id="statTotalOrgs">—</div></div>
+      <div class="stat-card"><div class="label">Dashboard Resmi Cocok</div><div class="value" id="statDashboards">—</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel wide">
+        <h2>Dataset Sosial &amp; Kependudukan</h2>
+        <div class="sub">Klik judul dataset untuk membuka visualisasinya di halaman tersendiri.</div>
+        <ul class="list" id="datasetList"><li>Memuat...</li></ul>
+      </div>
+
+      <div class="panel">
+        <h2>Dataset per OPD Terkait</h2>
+        <div class="sub">Jumlah dataset yang cocok, dikelompokkan per organisasi</div>
+        <svg id="chartOrgs" width="100%" height="280"></svg>
+      </div>
+
+      <div class="panel">
+        <h2>Dashboard Resmi Terkait</h2>
+        <div class="sub">Dari <code>/api/dashboard/</code> — klik untuk membuka dashboard aslinya</div>
+        <ul class="list" id="officialDashboards"><li>Memuat...</li></ul>
+      </div>
+    </div>
+
+    <footer>Sumber: satudata.acehprov.go.id/api (via proxy lokal) · Auto-refresh tiap 30 detik</footer>
+  </div>
+
+  <div id="detailView" style="display:none;">
+      <a class="back-link" href="index.html">← Kembali ke daftar dataset</a>
+      <div class="detail-header">
+        <h1 id="detailTitle">Memuat...</h1>
+        <p id="detailDesc"></p>
+        <div class="meta-pills" id="detailMeta"></div>
+        <div class="filters" id="detailYearFilter" style="display: none; margin-bottom:16px;">
+          <label>Tahun
+            <select id="detailYearSelect"></select>
+          </label>
+        </div>
+      </div>
+      <!-- <div class="status" id="detailStatusWrap" style="margin-bottom:16px;">
+        <span class="dot" id="detailStatusDot"></span>
+        <span id="detailStatusText">Memuat data...</span>
+      </div> -->
+
+      <div class="stat-row" id="detailStatRow" style="display:none;"></div>
+
+      <div class="panel wide" id="detailTrendPanel" style="display:none; margin-bottom:18px;">
+        <h2>Tren Antar Tahun</h2>
+        <div class="sub" id="detailTrendSub"></div>
+        <svg id="chartTrend" width="100%" height="260"></svg>
+      </div>
+
+      <div class="grid" id="detailGrid" style="display:none; margin-bottom:18px;">
+        <div class="panel">
+          <h2>Peta Sebaran Wilayah</h2>
+          <div class="sub" id="detailMapSub">Berdasarkan kab/kota, tahun terpilih</div>
+          <div id="detailMapPanel"></div>
+        </div>
+        <div class="panel">
+          <h2>Peringkat Kab/Kota</h2>
+          <div class="sub" id="detailRankSub"></div>
+          <svg id="chartRanking" width="100%" height="320"></svg>
+          <svg id="chartRankingLegend" width="100%" height="46"></svg>
+        </div>
+      </div>
+
+      <div class="panel wide" id="detailVizPanel" style="display:none;"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const CONFIG = {
+  baseUrl: "https://satudata-proxy.vercel.app",
+  pollingIntervalMs: 30000,
+  datasetPagesToFetch: 8,
+  datasetPageSize: 100,
+  acehTopoUrl: "https://raw.githubusercontent.com/ghapsara/indonesia-atlas/master/kabupaten-kota/Aceh/aceh-simplified-topo.json",
+  endpoints: {
+    dashboard:     "/api/dashboard/",
+    kabkota:       "/api/kabkota/?limit=200&page=0",
+    categories:    "/api/categories/?limit=20&page=1",
+    organizations: "/api/organizations/?limit=50&page=1"
+  }
+};
+
+const THEME_KEYWORDS = [
+  "sosial", "kependudukan", "perempuan", "anak", "disabilitas", "lansia",
+  "kemiskinan", "bansos", "pkh", "akta", "kia", "ktp", "kk", "yatim",
+  "panti", "rehabilitasi sosial", "korban bencana sosial", "fakir miskin",
+  "penyandang", "gender", "perlindungan anak", "keluarga"
+];
+
+const META_FIELDS = new Set([
+  "bps_kode_provinsi","bps_nama_provinsi","kemendagri_kode_provinsi","kemendagri_nama_provinsi",
+  "bps_kode_kabupaten_kota","bps_nama_kabupaten_kota","kemendagri_kode_kabupaten_kota","kemendagri_nama_kabupaten_kota",
+  "bps_kode_kecamatan","bps_nama_kecamatan","kemendagri_kode_kecamatan","kemendagri_nama_kecamatan",
+  "bps_kode_desa","bps_nama_desa","kemendagri_kode_desa","kemendagri_nama_desa",
+  "tahun","tingkat_penyajian","created_at","updated_at","deleted_at","id","uuid","satuan"
+]);
+
+async function fetchJSON(path) {
+  const res = await fetch(CONFIG.baseUrl + path, { headers: { "Accept": "application/json" } });
+  if (!res.ok) throw new Error(`${path} -> HTTP ${res.status}`);
+  return res.json();
+}
+
+function unwrapArray(json) {
+  if (Array.isArray(json)) return json;
+  if (!json || typeof json !== "object") return [];
+  if (Array.isArray(json.data)) return json.data;
+  if (json.data && Array.isArray(json.data.rows)) return json.data.rows;
+  for (const key of ["results", "items", "records", "rows", "list"]) {
+    if (Array.isArray(json[key])) return json[key];
+  }
+  return [];
+}
+
+function pick(obj, keys, fallback = "—") {
+  for (const k of keys) {
+    if (obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+  }
+  return fallback;
+}
+
+function stripAdminPrefix(name) {
+  return (name || "").replace(/^(Kabupaten|Kota|Kabupatan)\s+/i, "").trim();
+}
+
+const tooltip = d3.select("#tooltip");
+function showTip(html, evt){ tooltip.style("opacity",1).html(html).style("left",(evt.clientX+14)+"px").style("top",(evt.clientY-10)+"px"); }
+function hideTip(){ tooltip.style("opacity",0); }
+
+// Kolom "nilai" beda nama tiap dataset (persentase, jumlah, dst), jadi
+// dideteksi otomatis: apapun yang bukan META_FIELDS dianggap kandidat nilai.
+function extractLabelValue(row) {
+  const geoLabel =
+    row.bps_nama_kabupaten_kota || row.kemendagri_nama_kabupaten_kota ||
+    row.bps_nama_kecamatan || row.kemendagri_nama_kecamatan ||
+    row.bps_nama_desa || row.kemendagri_nama_desa ||
+    (row.tahun ? `Tahun ${row.tahun}` : null) ||
+    row.tingkat_penyajian || "?";
+
+  let category = null;
+  let value = NaN;
+  for (const key in row) {
+    if (META_FIELDS.has(key)) continue;
+    const v = row[key];
+    if (v === null || v === undefined || v === "") continue;
+    if (typeof v === "number") { if (isNaN(value)) value = v; continue; }
+    if (typeof v === "string") {
+      if (!isNaN(+v)) { if (isNaN(value)) value = +v; }
+      else if (!category) { category = v; }
+    }
+  }
+
+  const label = category ? `${geoLabel} — ${category}` : geoLabel;
+  return { label, value, tahun: row.tahun, satuan: row.satuan, category, geoLabel };
+}
+
+function rowsHaveKabupaten(rawRows) {
+  return rawRows.some(r => r.bps_nama_kabupaten_kota || r.kemendagri_nama_kabupaten_kota);
+}
+
+// Skala warna bersama, dipakai konsisten oleh peta DAN chart ranking,
+// supaya intensitas warna berarti sama di kedua visualisasi.
+function buildColorScale(parsed) {
+  const values = parsed.map(p => p.value).filter(v => !isNaN(v));
+  const domain = [d3.min(values) ?? 0, d3.max(values) ?? 1];
+  return d3.scaleSequential(d3.interpolateYlGnBu).domain(domain.slice().reverse());
+}
+
+function renderColorLegend(svgSel, color, satuan) {
+  svgSel.selectAll("*").remove();
+  const width = svgSel.node().parentElement.clientWidth || 400;
+  const legendW = Math.min(260, width - 20);
+  svgSel.attr("viewBox", `0 0 ${width} 46`);
+
+  const legend = svgSel.append("g").attr("transform", `translate(10, 8)`);
+  legend.append("text").attr("class", "legend-title").attr("y", -2)
+    .text(satuan ? `Skala warna (${satuan})` : "Skala warna nilai");
+
+  const gradId = "legend-gradient-" + Math.random().toString(36).slice(2, 8);
+  const defs = svgSel.append("defs");
+  const gradient = defs.append("linearGradient").attr("id", gradId);
+  d3.range(0, 1.01, 0.1).forEach(t => {
+    const [d0, d1] = color.domain();
+    gradient.append("stop").attr("offset", `${t * 100}%`).attr("stop-color", color(d0 + t * (d1 - d0)));
+  });
+
+  legend.append("rect").attr("y", 6).attr("width", legendW).attr("height", 10).attr("fill", `url(#${gradId})`);
+  const scale = d3.scaleLinear().domain(color.domain()).range([0, legendW]);
+  legend.append("g").attr("class", "axis map-legend").attr("transform", "translate(0,16)")
+    .call(d3.axisBottom(scale).ticks(4).tickFormat(d3.format(",.1f")));
+}
+
+/* ---------- List view ---------- */
+
+async function fetchDatasetsMultiPage() {
+  const pages = [];
+  for (let p = 1; p <= CONFIG.datasetPagesToFetch; p++) {
+    pages.push(
+      fetchJSON(`/api/datasets/?limit=${CONFIG.datasetPageSize}&page=${p}`)
+        .catch(err => { console.warn(`Gagal ambil halaman ${p}:`, err.message); return null; })
+    );
+  }
+  const results = await Promise.all(pages);
+  let combined = [];
+  let totalCount = 0;
+  results.forEach(r => {
+    if (!r) return;
+    combined = combined.concat(unwrapArray(r));
+    totalCount = +pick(r, ["count"], totalCount) || totalCount;
+  });
+  return { rows: combined, totalCount };
+}
+
+function isThemeRelevant(d) {
+  const haystack = [
+    d.judul, d.deskripsi, d.bidang, d.pengukuran,
+    d.organisasi && d.organisasi.nama,
+    d.organisasi && d.organisasi.keterangan
+  ].filter(Boolean).join(" ").toLowerCase();
+  return THEME_KEYWORDS.some(kw => haystack.includes(kw));
+}
+
+let ALL_DATASETS = [];
+let THEME_DATASETS = [];
+let LAST_DASHBOARDS = [];
+let activeChipKw = "";
+
+function currentSearchTerm() {
+  return {
+    typed: d3.select("#searchDataset").property("value").toLowerCase().trim(),
+    chip: activeChipKw,
+    org: d3.select("#filterOrg").property("value")
+  };
+}
+
+function filteredDatasets() {
+  const { typed, chip, org } = currentSearchTerm();
+  let rows = THEME_DATASETS;
+  if (chip) rows = rows.filter(d => JSON.stringify(d).toLowerCase().includes(chip));
+  if (typed) rows = rows.filter(d => JSON.stringify(d).toLowerCase().includes(typed));
+  if (org !== "__all__") rows = rows.filter(d => (d.organisasi && d.organisasi.nama) === org);
+  return rows;
+}
+
+function renderDatasetList() {
+  const filtered = filteredDatasets();
+  d3.select("#statMatched").text(filtered.length);
+
+  const ul = d3.select("#datasetList");
+  ul.selectAll("*").remove();
+
+  if (!filtered.length) {
+    ul.append("li").text("Tidak ada dataset cocok. Coba kata kunci lain atau pilih topik yang berbeda.");
+    return;
+  }
+
+  filtered.slice(0, 60).forEach(d => {
+    const li = ul.append("li");
+    const a = li.append("a").attr("class", "row-link").attr("href", `index.html?dataset=${d.uuid}`);
+    a.append("span").attr("class", "name")
+      .html(`<span class="badge">${pick(d,["satuan"],"")}</span>${d.judul || "Tanpa judul"}`);
+    a.append("span").attr("class", "meta").text(d.organisasi ? d.organisasi.nama : "");
+  });
+
+  renderOrgChart(filtered);
+}
+
+function renderOrgChart(rows) {
+  const svgEl = d3.select("#chartOrgs");
+  const width = svgEl.node().parentElement.clientWidth;
+  const height = 280;
+  const margin = { top: 8, right: 30, bottom: 20, left: 170 };
+  svgEl.attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
+
+  const counts = d3.rollup(rows, v => v.length, d => (d.organisasi ? d.organisasi.nama : "Tidak diketahui"));
+  const parsed = Array.from(counts, ([label, value]) => ({ label, value }))
+    .sort((a,b) => b.value - a.value).slice(0, 8);
+
+  if (!parsed.length) {
+    svgEl.append("text").attr("x", width/2).attr("y", height/2).attr("text-anchor","middle").text("Belum ada data.");
+    return;
+  }
+
+  const x = d3.scaleLinear().domain([0, d3.max(parsed, d => d.value) * 1.15]).range([margin.left, width - margin.right]);
+  const y = d3.scaleBand().domain(parsed.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(0.25);
+
+  const g = svgEl.append("g");
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).ticks(4));
+  g.append("g").attr("class","axis").attr("transform",`translate(${margin.left},0)`).call(d3.axisLeft(y));
+
+  g.selectAll("rect.bar").data(parsed).join("rect")
+    .attr("class","bar").attr("x", margin.left).attr("y", d => y(d.label))
+    .attr("height", y.bandwidth()).attr("width", 0)
+    .on("mousemove", (evt,d) => showTip(`<b>${d.label}</b><br>${d.value} dataset`, evt))
+    .on("mouseleave", hideTip)
+    .transition().duration(500).attr("width", d => x(d.value) - margin.left);
+}
+
+function renderOfficialDashboards() {
+  const { typed, chip } = currentSearchTerm();
+  const kw = (chip || typed);
+  let rows = LAST_DASHBOARDS.filter(d => {
+    const haystack = [d.title, d.topik && d.topik.nama, ...(d.organisasi||[]).map(o=>o.nama)]
+      .filter(Boolean).join(" ").toLowerCase();
+    return THEME_KEYWORDS.some(k => haystack.includes(k)) || (kw && haystack.includes(kw));
+  });
+  if (!rows.length) rows = LAST_DASHBOARDS;
+
+  d3.select("#statDashboards").text(rows.length);
+  const ul = d3.select("#officialDashboards");
+  ul.selectAll("*").remove();
+
+  if (!rows.length) {
+    ul.append("li").text("Belum ada dashboard resmi yang cocok.");
+    return;
+  }
+
+  rows.slice(0, 20).forEach(d => {
+    const li = ul.append("li");
+    const a = li.append("a").attr("class", "row-link").attr("href", d.url || "#").attr("target", "_blank");
+    a.append("span").attr("class","name").text(d.title || "Tanpa judul");
+    a.append("span").attr("class","meta").text(d.topik ? d.topik.nama : "");
+  });
+}
+
+async function loadListView() {
+  const dot = d3.select("#statusDot");
+  const banner = d3.select("#modeBanner");
+  try {
+    const [{ rows: datasetRows, totalCount }, kabkotaJson, orgsJson, dashboardJson] = await Promise.all([
+      fetchDatasetsMultiPage(),
+      fetchJSON(CONFIG.endpoints.kabkota),
+      fetchJSON(CONFIG.endpoints.organizations),
+      fetchJSON(CONFIG.endpoints.dashboard)
+    ]);
+
+    ALL_DATASETS = datasetRows;
+    THEME_DATASETS = ALL_DATASETS.filter(isThemeRelevant);
+    LAST_DASHBOARDS = unwrapArray(dashboardJson);
+
+    d3.select("#statTotalDatasets").text(totalCount || ALL_DATASETS.length);
+
+    const orgNames = [...new Set(THEME_DATASETS.map(d => d.organisasi && d.organisasi.nama).filter(Boolean))].sort();
+    d3.select("#statTotalOrgs").text(orgNames.length);
+
+    d3.select("#filterOrg").selectAll("option.dyn").data(orgNames).join("option")
+      .attr("class","dyn").attr("value", d => d).text(d => d);
+
+    renderDatasetList();
+    renderOfficialDashboards();
+
+    dot.classed("err", false);
+    banner.html(`<b>Terhubung.</b> ${ALL_DATASETS.length} dataset dimuat (total katalog: ${totalCount}) · update terakhir ${new Date().toLocaleTimeString("id-ID")}.`);
+    d3.select("#statusText").text("Live · " + new Date().toLocaleTimeString("id-ID"));
+  } catch (err) {
+    console.error("Gagal memuat data:", err);
+    dot.classed("err", true);
+    d3.select("#statusText").text("Gagal terhubung — cek console (F12)");
+    banner.attr("class","banner warn").html(`<b>Gagal menghubungi API.</b> Pastikan proxy lokal masih berjalan. Error: <code>${err.message}</code>`);
+  }
+}
+
+function initListView() {
+  d3.select("#searchDataset").on("input", () => { renderDatasetList(); renderOfficialDashboards(); });
+  d3.select("#filterOrg").on("change", renderDatasetList);
+  d3.selectAll(".chip").on("click", function() {
+    d3.selectAll(".chip").classed("active", false);
+    d3.select(this).classed("active", true);
+    activeChipKw = d3.select(this).attr("data-kw");
+    renderDatasetList();
+    renderOfficialDashboards();
+  });
+  loadListView();
+  setInterval(loadListView, CONFIG.pollingIntervalMs);
+}
+
+/* ---------- Detail view ---------- */
+
+async function fetchDatasetMeta(uuid) {
+  return fetchJSON(`/api/datasets/${uuid}`);
+}
+
+async function fetchDatasetValues(uuid, tahun) {
+  const path = `/api/datasets/${uuid}/datasources/json?tahun=${tahun}&limit=500&page=0&sortByColumn=&sortByType=`;
+  const json = await fetchJSON(path);
+  const years = (json.metadata && json.metadata.years) ? json.metadata.years.map(y => y.year) : [];
+  return { rows: unwrapArray(json), years };
+}
+
+let acehTopoCache = null;
+async function loadAcehTopo() {
+  if (acehTopoCache) return acehTopoCache;
+  const res = await fetch(CONFIG.acehTopoUrl);
+  acehTopoCache = await res.json();
+  return acehTopoCache;
+}
+
+function renderBigNumber(container, row) {
+  container.html("").append("div").attr("class", "big-number").html(`
+    <span class="value">${d3.format(",")(row.value)}</span><span class="unit">${row.satuan || ""}</span>
+    <div class="caption">${row.tahun ? "Tahun " + row.tahun : ""} · ${row.geoLabel}</div>
+  `);
+}
+
+function renderBarChart(container, rows, satuan) {
+  container.html("");
+  const height = Math.max(260, Math.min(rows.length, 50) * 22 + 40);
+  const svg = container.append("svg").attr("width", "100%").attr("height", height);
+  const width = svg.node().parentElement.clientWidth;
+  const margin = { top: 10, right: 40, bottom: 20, left: 220 };
+  svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+  const parsed = rows.slice(0, 50);
+  const x = d3.scaleLinear().domain([0, d3.max(parsed, d => d.value) * 1.1]).range([margin.left, width - margin.right]);
+  const y = d3.scaleBand().domain(parsed.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(0.25);
+
+  const g = svg.append("g");
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).ticks(5));
+  g.append("g").attr("class","axis").attr("transform",`translate(${margin.left},0)`).call(d3.axisLeft(y));
+
+  g.selectAll("rect.bar").data(parsed).join("rect")
+    .attr("class","bar").attr("x", margin.left).attr("y", d => y(d.label))
+    .attr("height", y.bandwidth()).attr("width", 0)
+    .on("mousemove", (evt,d) => showTip(`<b>${d.label}</b><br>${d3.format(",.2f")(d.value)} ${satuan || ""}`, evt))
+    .on("mouseleave", hideTip)
+    .transition().duration(500).attr("width", d => x(d.value) - margin.left);
+}
+
+async function renderChoroplethMap(container, rows, satuan, color) {
+  container.html("").append("div").attr("class","sub").text("Memuat peta Aceh...");
+
+  const topo = await loadAcehTopo();
+  const objectKey = Object.keys(topo.objects || {}).find(
+    k => topo.objects[k] && Array.isArray(topo.objects[k].geometries) && topo.objects[k].geometries.length
+  );
+  if (!objectKey) throw new Error("Struktur topojson tidak dikenali (tidak ada objects.geometries)");
+
+  const geomCollection = topo.objects[objectKey];
+  const features = [];
+  geomCollection.geometries.forEach(g => {
+    try {
+      const feat = topojson.feature(topo, g);
+      const okGeometry = feat && feat.geometry && (
+        Array.isArray(feat.geometry.coordinates) || Array.isArray(feat.geometry.geometries)
+      );
+      if (okGeometry) features.push(feat);
+      else console.warn("Geometry tidak valid, dilewati:", g.properties, feat && feat.geometry);
+    } catch (e) {
+      console.warn("Lewati satu wilayah karena gagal dikonversi:", g.properties, e.message);
+    }
+  });
+
+  const valueByRegion = new Map();
+  rows.forEach(r => {
+    const key = stripAdminPrefix(r.geoLabel).toLowerCase();
+    const existing = valueByRegion.get(key) || [];
+    existing.push(r.value);
+    valueByRegion.set(key, existing);
+  });
+  const avgByRegion = new Map();
+  valueByRegion.forEach((vals, key) => avgByRegion.set(key, d3.mean(vals)));
+
+  container.html("");
+  const width = container.node().clientWidth || 800;
+  const height = 520;
+  const svg = container.append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+
+  const featureCollection = { type: "FeatureCollection", features };
+  const projection = d3.geoMercator();
+  const path = d3.geoPath().projection(projection);
+  projection.fitSize([width, height - 40], featureCollection);
+
+  svg.selectAll("path").data(features).join("path")
+    .attr("class", "map-region")
+    .attr("d", f => { try { return path(f); } catch (e) { console.warn("Lewati gambar wilayah:", f.properties, e.message); return null; } })
+    .attr("fill", f => {
+      const key = stripAdminPrefix(f.properties.kabkot || f.properties.name || "").toLowerCase();
+      const v = avgByRegion.get(key);
+      return v === undefined ? "#e4e1d8" : color(v);
+    })
+    .on("mousemove", (evt, f) => {
+      const key = stripAdminPrefix(f.properties.kabkot || f.properties.name || "").toLowerCase();
+      const v = avgByRegion.get(key);
+      showTip(`<b>${f.properties.kabkot || f.properties.name}</b><br>${v !== undefined ? d3.format(",.2f")(v) + " " + (satuan||"") : "Tidak ada data"}`, evt);
+    })
+    .on("mouseleave", hideTip);
+}
+
+function renderRawFallback(container, meta) {
+  container.html("").append("div").attr("class","sub").html(`
+    Dataset ini belum punya data terisi (total data: ${(meta && (meta.totalData ?? meta.total_data)) || 0}).
+    Kemungkinan OPD terkait belum menginput data untuk tahun ini.
+  `);
+}
+
+function pickAggregator(meta) {
+  const text = ((meta.satuan||"") + " " + (meta.judul||"")).toLowerCase();
+  const avgKeywords = ["persen","%","indeks","index","rasio","skor","tingkat","proporsi","rata-rata"];
+  return avgKeywords.some(k => text.includes(k)) ? "avg" : "sum";
+}
+
+function renderDetailStatCards(parsed, meta, activeTahun, aggregator) {
+  const wrap = d3.select("#detailStatRow");
+  const vals = parsed.map(p => p.value).filter(v => !isNaN(v));
+  if (!vals.length) { wrap.style("display","none"); return; }
+
+  const agg = aggregator === "avg" ? d3.mean(vals) : d3.sum(vals);
+  const aggLabel = aggregator === "avg" ? "Rata-rata" : "Total";
+  const sorted = [...parsed].sort((a,b) => b.value - a.value);
+  const top = sorted[0];
+
+  const cards = [
+    { label: `${aggLabel} (${meta.satuan || "nilai"})`, value: d3.format(",.2f")(agg) },
+    { label: "Jumlah Baris Data", value: parsed.length },
+    { label: "Nilai Tertinggi", value: top ? top.geoLabel : "—", sub: top ? `${d3.format(",.2f")(top.value)} ${meta.satuan||""}` : "" },
+    { label: "Tahun Data", value: activeTahun || "—" }
+  ];
+
+  wrap.style("display","grid").selectAll("*").remove();
+  cards.forEach(c => {
+    const card = wrap.append("div").attr("class","stat-card");
+    card.append("div").attr("class","label").text(c.label);
+    card.append("div").attr("class","value").text(c.value);
+    if (c.sub) card.append("div").attr("class","sub-value").text(c.sub);
+  });
+}
+
+async function fetchYearlyTrend(uuid, years, aggregator) {
+  const sortedYears = [...years].sort((a,b) => +a - +b);
+  const trendYears = sortedYears.length > 20 ? sortedYears.slice(-20) : sortedYears;
+
+  const results = await Promise.all(trendYears.map(y =>
+    fetchDatasetValues(uuid, y).then(r => ({ year: +y, rows: r.rows })).catch(() => ({ year: +y, rows: [] }))
+  ));
+
+  return results.map(({ year, rows }) => {
+    const vals = rows.map(extractLabelValue).map(r => r.value).filter(v => !isNaN(v));
+    if (!vals.length) return null;
+    const value = aggregator === "avg" ? d3.mean(vals) : d3.sum(vals);
+    return { year, value };
+  }).filter(Boolean).sort((a,b) => a.year - b.year);
+}
+
+function renderTrendChart(svgEl, data, satuan) {
+  svgEl.selectAll("*").remove();
+  const width = svgEl.node().parentElement.clientWidth || 800;
+  const height = 260;
+  const margin = { top: 20, right: 30, bottom: 30, left: 60 };
+  svgEl.attr("viewBox", `0 0 ${width} ${height}`);
+
+  const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([margin.left, width - margin.right]);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.15]).range([height - margin.bottom, margin.top]);
+
+  const g = svgEl.append("g");
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${height-margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(Math.min(data.length, 10)).tickFormat(d3.format("d")));
+  g.append("g").attr("class","axis").attr("transform",`translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5));
+
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
+  g.append("path").datum(data).attr("class","trend-line").attr("d", line);
+
+  g.selectAll("circle").data(data).join("circle")
+    .attr("class","trend-dot").attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", 4)
+    .on("mousemove", (evt,d) => showTip(`<b>${d.year}</b><br>${d3.format(",.2f")(d.value)} ${satuan||""}`, evt))
+    .on("mouseleave", hideTip);
+}
+
+// Bar ranking sekarang diwarnai per-nilai pakai skala warna yang sama
+// dengan peta, jadi warnanya konsisten dan legend-nya berlaku buat keduanya.
+function renderRankingChart(svgEl, rows, satuan, color, topN = 15) {
+  svgEl.selectAll("*").remove();
+  const sorted = [...rows].sort((a,b) => b.value - a.value).slice(0, topN);
+  const height = Math.max(260, sorted.length * 22 + 40);
+  svgEl.attr("height", height);
+  const width = svgEl.node().parentElement.clientWidth || 600;
+  const margin = { top: 10, right: 40, bottom: 20, left: 170 };
+  svgEl.attr("viewBox", `0 0 ${width} ${height}`);
+
+  const x = d3.scaleLinear().domain([0, d3.max(sorted, d => d.value) * 1.1]).range([margin.left, width - margin.right]);
+  const y = d3.scaleBand().domain(sorted.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(0.25);
+
+  const g = svgEl.append("g");
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).ticks(4));
+  g.append("g").attr("class","axis").attr("transform",`translate(${margin.left},0)`).call(d3.axisLeft(y));
+
+  g.selectAll("rect.bar").data(sorted).join("rect")
+    .attr("x", margin.left).attr("y", d => y(d.label))
+    .attr("height", y.bandwidth()).attr("width", 0)
+    .attr("fill", d => color(d.value))
+    .on("mousemove", (evt,d) => showTip(`<b>${d.label}</b><br>${d3.format(",.2f")(d.value)} ${satuan||""}`, evt))
+    .on("mouseleave", hideTip)
+    .transition().duration(500).attr("width", d => x(d.value) - margin.left);
+}
+
+let currentDetailUuid = null;
+
+async function loadDetailView(uuid, tahunOverride) {
+  const dot = d3.select("#detailStatusDot");
+  const statusText = d3.select("#detailStatusText");
+  const vizPanel = d3.select("#detailVizPanel");
+  const statRow = d3.select("#detailStatRow");
+  const trendPanel = d3.select("#detailTrendPanel");
+  const grid = d3.select("#detailGrid");
+  currentDetailUuid = uuid;
+
+  statRow.style("display","none");
+  trendPanel.style("display","none");
+  grid.style("display","none");
+  vizPanel.style("display","none").html("");
+
+  try {
+    const meta = (await fetchDatasetMeta(uuid)).data;
+
+    d3.select("#detailTitle").text(meta.judul || "Tanpa judul");
+    d3.select("#detailDesc").text(meta.deskripsi || "");
+    const pills = d3.select("#detailMeta").html("");
+    [meta.organisasi && meta.organisasi.nama, meta.tingkat_penyajian, meta.satuan]
+      .filter(Boolean)
+      .forEach(p => pills.append("span").attr("class","meta-pill").html(`<b>${p}</b>`));
+
+    const guessTahun = tahunOverride || ((meta.dimensi && /^\d{4}$/.test(meta.dimensi)) ? meta.dimensi : new Date().getFullYear());
+    let { rows: rawRows, years } = await fetchDatasetValues(uuid, guessTahun);
+
+    if (!rawRows.length && years.length && !tahunOverride && !years.includes(String(guessTahun))) {
+      const retry = await fetchDatasetValues(uuid, years[0]);
+      rawRows = retry.rows;
+      years = retry.years.length ? retry.years : years;
+    }
+
+    const activeTahun = rawRows.length && rawRows[0].tahun ? rawRows[0].tahun : guessTahun;
+
+    if (years.length) {
+      const yearSelect = d3.select("#detailYearSelect");
+      d3.select("#detailYearFilter").style("display", "flex");
+      yearSelect.selectAll("option").data(years).join("option")
+        .attr("value", d => d).text(d => d)
+        .property("selected", d => d === String(activeTahun));
+      yearSelect.on("change", function() { loadDetailView(currentDetailUuid, this.value); });
+    } else {
+      d3.select("#detailYearFilter").style("display", "none");
+    }
+
+    if (!rawRows.length) {
+      vizPanel.style("display","block");
+      renderRawFallback(vizPanel, meta);
+      dot.classed("err", true);
+      statusText.text("Tidak ada data untuk tahun ini — " + new Date().toLocaleTimeString("id-ID"));
+      return;
+    }
+
+    const parsed = rawRows.map(extractLabelValue).filter(r => !isNaN(r.value));
+    const aggregator = pickAggregator(meta);
+    const hasGeo = rowsHaveKabupaten(rawRows);
+
+    if (!parsed.length) {
+      vizPanel.style("display","block");
+      renderRawFallback(vizPanel, meta);
+    } else {
+      renderDetailStatCards(parsed, meta, activeTahun, aggregator);
+
+      if (years.length > 1) {
+        trendPanel.style("display","block");
+        d3.select("#detailTrendSub").text(
+          aggregator === "avg" ? "Rata-rata lintas wilayah per tahun" : "Total lintas wilayah per tahun"
+        );
+        try {
+          const trendData = await fetchYearlyTrend(uuid, years, aggregator);
+          if (trendData.length > 1) renderTrendChart(d3.select("#chartTrend"), trendData, meta.satuan);
+          else trendPanel.style("display","none");
+        } catch (trendErr) {
+          console.warn("Gagal memuat tren tahunan:", trendErr.message);
+          trendPanel.style("display","none");
+        }
+      }
+
+      if (parsed.length === 1) {
+        vizPanel.style("display","block");
+        renderBigNumber(vizPanel, parsed[0]);
+      } else if (hasGeo) {
+        grid.style("display","grid");
+        const color = buildColorScale(parsed);
+        d3.select("#detailRankSub").text(`Top ${Math.min(15, parsed.length)} wilayah, tahun ${activeTahun}`);
+        renderRankingChart(d3.select("#chartRanking"), parsed, meta.satuan, color);
+        renderColorLegend(d3.select("#chartRankingLegend"), color, meta.satuan);
+        try {
+          await renderChoroplethMap(d3.select("#detailMapPanel"), parsed, meta.satuan, color);
+        } catch (mapErr) {
+          console.error("Render peta gagal, fallback ke bar chart:", mapErr);
+          d3.select("#detailMapPanel").html("");
+          renderBarChart(d3.select("#detailMapPanel"), parsed, meta.satuan);
+        }
+      } else {
+        vizPanel.style("display","block");
+        renderBarChart(vizPanel, parsed, meta.satuan);
+      }
+    }
+
+    dot.classed("err", false);
+    statusText.text("Live · " + new Date().toLocaleTimeString("id-ID"));
+  } catch (err) {
+    console.error("Gagal memuat detail dataset:", err);
+    dot.classed("err", true);
+    statusText.text("Gagal memuat — cek console (F12)");
+    vizPanel.style("display","block").html(`<div class="sub">Error: ${err.message}</div>`);
+  }
+}
+
+function initDetailView(uuid) {
+  loadDetailView(uuid);
+  setInterval(() => loadDetailView(uuid, d3.select("#detailYearSelect").property("value") || undefined), CONFIG.pollingIntervalMs);
+}
+
+/* ---------- Router ---------- */
+
+const routeUuid = new URLSearchParams(location.search).get("dataset");
+
+if (routeUuid) {
+  document.getElementById("listView").style.display = "none";
+  document.getElementById("detailView").style.display = "block";
+  initDetailView(routeUuid);
+} else {
+  initListView();
+}
+</script>
+</body>
+</html>
