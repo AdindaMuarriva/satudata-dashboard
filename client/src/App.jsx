@@ -1,14 +1,17 @@
-import { Routes, Route } from "react-router-dom";
-import ListView from "./components/ListView.jsx";
-import DetailView from "./components/DetailView.jsx";
+import { useRef } from "react";
+import ListPage from "./ListPage";
+import DetailPage from "./Detailpage";
 
 export default function App() {
+  const tooltipRef = useRef(null);
+  const uuid = new URLSearchParams(window.location.search).get("dataset");
+
   return (
     <div className="wrap">
-      <Routes>
-        <Route path="/" element={<ListView />} />
-        <Route path="/dataset/:uuid" element={<DetailView />} />
-      </Routes>
+      {uuid
+        ? <DetailPage uuid={uuid} tooltipRef={tooltipRef} />
+        : <ListPage tooltipRef={tooltipRef} />}
+      <div className="tooltip" ref={tooltipRef}></div>
     </div>
   );
 }
