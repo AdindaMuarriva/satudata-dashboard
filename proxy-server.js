@@ -1,25 +1,4 @@
-/**
- * Proxy sederhana buat bypass CORS ke satudata.acehprov.go.id
- * ------------------------------------------------------------
- * Kenapa ini perlu: satudata.acehprov.go.id/api hanya izinkan
- * request dari origin situsnya sendiri (CORS block). Browser
- * kamu nggak bisa dipaksa nembus itu — tapi server-to-server
- * request (dari Node.js ini ke satudata) TIDAK kena aturan CORS,
- * karena CORS itu aturan browser, bukan aturan HTTP secara umum.
- *
- * Jadi proxy ini nerima request dari dashboard kamu, terusin ke
- * satudata.acehprov.go.id, lalu balikin hasilnya ke dashboard —
- * dengan header CORS yang benar supaya browser kamu nggak protes.
- *
- * CARA JALANIN:
- *   1. npm init -y
- *   2. npm install express node-fetch@2 cors
- *   3. node proxy-server.js
- *   4. Proxy jalan di http://localhost:3001
- *   5. Di dashboard HTML, ubah CONFIG.baseUrl jadi:
- *        "http://localhost:3001/api"
- *      (bukan lagi "https://satudata.acehprov.go.id/api")
- */
+// Proxy sederhana buat bypass CORS ke satudata.acehprov.go.id
 
 const express = require("express");
 const fetch = require("node-fetch"); // versi 2.x, support require()
