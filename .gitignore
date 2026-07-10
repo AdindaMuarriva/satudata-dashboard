@@ -24,3 +24,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+client/node_modules/
+client/dist/

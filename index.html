@@ -129,9 +129,9 @@
       </div>
     </header>
 
-    <!-- <div class="banner" id="modeBanner">
-      Terhubung via proxy lokal (<code>node proxy-server.js</code>).
-    </div> -->
+    <div class="banner" id="modeBanner">
+      Terhubung via proxy lokal (<code>node proxy-server.js</code>). Klik judul dataset untuk membuka halaman detailnya.
+    </div>
 
     <div class="chips" id="topicChips">
       <span class="chip active" data-kw="">Semua</span>
@@ -174,7 +174,7 @@
 
       <div class="panel">
         <h2>Dashboard Resmi Terkait</h2>
-        <div class="sub">Dari <code>/api/dashboard/</code> — klik untuk membuka dashboard aslinya</div>
+        <div class="sub">Dari <code>/api/dashboard</code> — klik untuk membuka dashboard aslinya</div>
         <ul class="list" id="officialDashboards"><li>Memuat...</li></ul>
       </div>
     </div>
@@ -194,10 +194,10 @@
           </label>
         </div>
       </div>
-      <!-- <div class="status" id="detailStatusWrap" style="margin-bottom:16px;">
+      <div class="status" id="detailStatusWrap" style="margin-bottom:16px;">
         <span class="dot" id="detailStatusDot"></span>
         <span id="detailStatusText">Memuat data...</span>
-      </div> -->
+      </div>
 
       <div class="stat-row" id="detailStatRow" style="display:none;"></div>
 
@@ -234,10 +234,10 @@ const CONFIG = {
   datasetPageSize: 100,
   acehTopoUrl: "https://raw.githubusercontent.com/ghapsara/indonesia-atlas/master/kabupaten-kota/Aceh/aceh-simplified-topo.json",
   endpoints: {
-    dashboard:     "/api/dashboard/",
-    kabkota:       "/api/kabkota/?limit=200&page=0",
-    categories:    "/api/categories/?limit=20&page=1",
-    organizations: "/api/organizations/?limit=50&page=1"
+    dashboard:     "/api/dashboard",
+    kabkota:       "/api/kabkota?limit=200&page=0",
+    categories:    "/api/categories?limit=20&page=1",
+    organizations: "/api/organizations?limit=50&page=1"
   }
 };
 
@@ -357,7 +357,7 @@ async function fetchDatasetsMultiPage() {
   const pages = [];
   for (let p = 1; p <= CONFIG.datasetPagesToFetch; p++) {
     pages.push(
-      fetchJSON(`/api/datasets/?limit=${CONFIG.datasetPageSize}&page=${p}`)
+      fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=${p}`)
         .catch(err => { console.warn(`Gagal ambil halaman ${p}:`, err.message); return null; })
     );
   }
