@@ -204,3 +204,61 @@ export async function renderChoroplethMap(container, rows, satuan, color, toolti
     })
     .on("mouseleave", () => hideTip(tooltipEl));
 }
+
+export function renderUnitChart(svgNode, rows, tooltipEl) {
+  const svg = d3.select(svgNode);
+  const width = svgNode.parentElement.clientWidth || 420;
+  const height = 280;
+  const margin = { top: 10, right: 28, bottom: 24, left: 128 };
+  svg.attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
+  const data = Array.from(d3.rollup(rows, values => values.length, row => row.satuan || "Tidak disebutkan"), ([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value).slice(0, 8);
+  if (!data.length) {
+    svg.append("text").attr("x", width / 2).attr("y", height / 2).attr("text-anchor", "middle").text("Belum ada data.");
+    return;
+  }
+  const x = d3.scaleLinear().domain([0, (d3.max(data, d => d.value) || 1) * 1.15]).range([margin.left, width - margin.right]);
+  const y = d3.scaleBand().domain(data.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(.3);
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(4));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y));
+  svg.append("g").selectAll("rect").data(data).join("rect").attr("x", margin.left).attr("y", d => y(d.label)).attr("height", y.bandwidth()).attr("rx", 6).attr("fill", "#d92419").attr("width", 0)
+    .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${d.label}</b><br>${d.value} dataset`, event)).on("mouseleave", () => hideTip(tooltipEl))
+    .transition().duration(550).attr("width", d => x(d.value) - margin.left);
+}
+
+export function renderMultiTrendChart(container, series, tooltipEl) {
+  d3.select(container).selectAll("*").remove();
+  const width = container.clientWidth || 800;
+  const height = 410;
+  const margin = { top: 28, right: 185, bottom: 72, left: 76 };
+  const points = series.flatMap(item => item.data.map(point => ({ ...point, series: item })));
+  const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+  const x = d3.scaleLinear().domain(d3.extent(points, d => d.year)).range([margin.left, width - margin.right]);
+  const y = d3.scaleLinear().domain([0, (d3.max(points, d => d.value) || 1) * 1.12]).nice().range([height - margin.bottom, margin.top]);
+  const colors = ["#d92419", "#1f6feb", "#0f8a63", "#9a5bd1", "#d97706"];
+  const color = d3.scaleOrdinal(colors).domain(series.map(item => item.uuid));
+  const chart = svg.append("g");
+  chart.append("g").attr("class", "comparison-grid").attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(5).tickSize(-(width - margin.left - margin.right)).tickFormat(""));
+  chart.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(8).tickFormat(d3.format("d")));
+  chart.append("g").attr("class", "axis comparison-y-axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5));
+  const line = d3.line().curve(d3.curveMonotoneX).x(d => x(d.year)).y(d => y(d.value));
+  series.forEach(item => {
+    const stroke = color(item.uuid);
+    chart.append("path").datum(item.data).attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 6).attr("stroke-linecap", "round").attr("d", line);
+    chart.append("path").datum(item.data).attr("fill", "none").attr("stroke", stroke).attr("stroke-width", 3).attr("stroke-linecap", "round").attr("d", line);
+    chart.selectAll(`.point-${item.uuid}`).data(item.data).join("circle").attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", 4).attr("fill", stroke)
+      .attr("stroke", "#fff").attr("stroke-width", 2)
+      .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${item.title}</b><br>${d.year}: ${d3.format(",.2f")(d.value)} ${item.satuan}`, event))
+      .on("mouseleave", () => hideTip(tooltipEl));
+    const last = item.data[item.data.length - 1];
+    chart.append("text").attr("x", x(last.year) + 10).attr("y", y(last.value) + 4).attr("fill", stroke).attr("font-size", 11).attr("font-weight", 700)
+      .text(`${item.title.slice(0, 18)}${item.title.length > 18 ? "…" : ""}`);
+  });
+  const legend = svg.append("g").attr("transform", `translate(${margin.left},${height - 22})`);
+  series.forEach((item, index) => {
+    const entry = legend.append("g").attr("transform", `translate(${index * 150},0)`);
+    entry.append("circle").attr("r", 5).attr("fill", color(item.uuid));
+    entry.append("text").attr("x", 10).attr("y", 4).attr("fill", "#4f4544").attr("font-size", 11).text(`${item.title.slice(0, 22)}${item.title.length > 22 ? "…" : ""} (${item.satuan})`);
+  });
+}

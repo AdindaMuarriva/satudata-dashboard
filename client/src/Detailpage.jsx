@@ -148,7 +148,7 @@ export default function DetailPage({ uuid, tooltipRef }) {
 
   if (!meta) {
     return (
-      <div id="detailView">
+      <div id="detailView" className="detail-page">
         <a className="back-link" href="?">← Kembali ke daftar dataset</a>
         <div className="detail-header"><h1>Memuat...</h1></div>
       </div>
@@ -156,10 +156,10 @@ export default function DetailPage({ uuid, tooltipRef }) {
   }
 
   return (
-    <div id="detailView">
+    <div id="detailView" className="detail-page">
       <a className="back-link" href="?">← Kembali ke daftar dataset</a>
 
-      <div className="detail-header">
+      <div className="detail-header detail-hero">
         <h1>{meta.judul || "Tanpa judul"}</h1>
         <p>{meta.deskripsi || ""}</p>
         <div className="meta-pills">
@@ -168,7 +168,7 @@ export default function DetailPage({ uuid, tooltipRef }) {
           ))}
         </div>
         {years.length > 0 && (
-          <div className="filters" style={{ marginBottom: 16 }}>
+          <div className="filters detail-year-filter" style={{ marginBottom: 16 }}>
             <label>Tahun
               <select value={selectedTahun || ""} onChange={handleYearChange}>
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -178,7 +178,7 @@ export default function DetailPage({ uuid, tooltipRef }) {
         )}
       </div>
 
-      <div className="status" style={{ marginBottom: 16 }}>
+      <div className="status detail-status" style={{ marginBottom: 16 }}>
         <span className={"dot" + (status.ok ? "" : " err")}></span>
         <span>{status.text}</span>
       </div>
@@ -236,7 +236,7 @@ export default function DetailPage({ uuid, tooltipRef }) {
       )}
 
       {viewMode === "empty" && (
-        <div className="panel wide">
+        <div className="panel wide empty-dataset-state">
           <div className="sub">
             Dataset ini belum punya data terisi (total data: {(meta.totalData ?? meta.total_data) || 0}).
             Kemungkinan OPD terkait belum menginput data untuk tahun ini.
