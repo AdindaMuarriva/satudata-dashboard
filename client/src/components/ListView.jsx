@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchJSON, CONFIG } from "../api/client.js";
 
 export default function ListView() {
-  const [status, setStatus] = useState("Menghubungkan...");
+  // const [status, setStatus] = useState("Menghubungkan...");
   const [error, setError] = useState(null);
 
   useEffect(() => {

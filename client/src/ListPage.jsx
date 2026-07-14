@@ -31,7 +31,7 @@ export default function ListPage({ tooltipRef }) {
   const [dashboards, setDashboards] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [orgNames, setOrgNames] = useState([]);
-  const [status, setStatus] = useState({ ok: true, text: "Menghubungkan..." });
+  // const [status, setStatus] = useState({ ok: true, text: "Menghubungkan..." });
   const [banner, setBanner] = useState({ warn: false, html: "" });
 
   const [search, setSearch] = useState("");
@@ -48,6 +48,10 @@ export default function ListPage({ tooltipRef }) {
     const query = search.trim();
     const searchUrl = query ? `?page=search&query=${encodeURIComponent(query)}` : "?page=search";
     window.location.href = searchUrl;
+  }
+
+  function handleAdminLogin() {
+    window.location.href = "?page=admin";
   }
 
   async function load() {
@@ -69,10 +73,11 @@ export default function ListPage({ tooltipRef }) {
       // Mengumpulkan daftar nama seluruh OPD/Dinas yang tersedia secara dinamis
       setOrgNames([...new Set(datasetRows.map(d => d.organisasi && d.organisasi.nama).filter(Boolean))].sort());
 
-      setStatus({ ok: true, text: "Live · " + new Date().toLocaleTimeString("id-ID") });
+      // setStatus({ ok: true, text: "Live · " + new Date().toLocaleTimeString("id-ID") });
+
       setBanner({
         warn: false,
-        html: `<b>Terhubung via Proxy Portal.</b> Silakan gunakan filter Organisasi (OPD) untuk melihat data spesifik per dinas.`
+        html: `Silakan gunakan filter Organisasi (OPD) untuk melihat data spesifik per instansi.`
       });
     } catch (err) {
       console.error("Gagal memuat data:", err);
@@ -135,14 +140,14 @@ export default function ListPage({ tooltipRef }) {
             <a href="#features">Group</a>
             <a href="#features">Bidang Urusan</a>
           </nav>
-          <div className="hero-login">Login</div>
+          <button type="button" className="hero-login" onClick={handleAdminLogin}>Login</button>
         </div>
         <div className="hero-status-row">
           <div className={"banner" + (banner.warn ? " warn" : "")} dangerouslySetInnerHTML={{ __html: banner.html || "Terhubung via proxy. Klik judul dataset untuk membuka halaman detailnya." }} />
-          <div className="status mini-status">
+          {/* <div className="status mini-status">
             <span className={"dot" + (status.ok ? "" : " err")}></span>
             <span>{status.text}</span>
-          </div>
+          </div> */}
         </div>
 
         <div className="hero-grid">
@@ -189,22 +194,6 @@ export default function ListPage({ tooltipRef }) {
         </div>
       </section>
 
-      <section className="feature-section" id="features">
-        <div className="section-head">
-          <h2>Fitur Utama</h2>
-          <a href="#">Lihat semua fitur</a>
-        </div>
-        <p className="section-sub">Pilih fungsi yang ingin Anda jelajahi dengan cepat.</p>
-        <div className="feature-grid">
-          {FEATURES.map(feature => (
-            <a key={feature.title} className="feature-card feature-link" href={`?page=feature&feature=${encodeURIComponent(feature.title)}`}>
-              <strong>{feature.title}</strong>
-              <p>{feature.description}</p>
-            </a>
-          ))}
-        </div>
-      </section>
-
       <section className="topic-instansi">
         <div className="topic-panel">
           <div className="panel-head">
@@ -240,14 +229,6 @@ export default function ListPage({ tooltipRef }) {
         </div>
       </section>
 
-      
-
-      
-
-      
-
-      {/* STAT ROW ASLI KAMU (TIDAK HILANG, label disesuaikan dikit agar relevan) */}
-      
 
       {/* LAYOUT GRID 3 PANEL ASLI KAMU (TIDAK HILANG) */}
       <div className="grid" id="datasets">
