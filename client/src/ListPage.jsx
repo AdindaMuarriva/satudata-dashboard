@@ -3,6 +3,15 @@ import {
   CONFIG, THEME_KEYWORDS, fetchJSON, fetchDatasetsMultiPage, unwrapArray,
   isThemeRelevant, pick
 } from "./api";
+import {
+  Database,
+  Users,
+  Landmark,
+  Baby,
+  Accessibility,
+  PersonStanding,
+  HandCoins
+} from "lucide-react";
 import { renderOrgChart } from "./charts";
 
 // Dikembalikan ke CHIPS asli milikmu agar tidak ada fitur yang hilang
@@ -15,6 +24,16 @@ const CHIPS = [
   { label: "Lansia", kw: "lansia" },
   { label: "Kemiskinan", kw: "kemiskinan" }
 ];
+
+const ICONS = {
+  "Semua": <Database size={24} />,
+  "Sosial": <Users size={24} />,
+  "Kependudukan": <Landmark size={24} />,
+  "Perempuan & Anak": <Baby size={24} />,
+  "Disabilitas": <Accessibility size={24} />,
+  "Lansia": <PersonStanding size={24} />,
+  "Kemiskinan": <HandCoins size={24} />,
+};
 
 const FEATURES = [
   { title: "Dataset", description: "Jelajahi data resmi ACEH untuk analisis dan kebijakan." },
@@ -207,7 +226,9 @@ export default function ListPage({ tooltipRef }) {
                 className={"topic-card" + (chip === topic.kw ? " active" : "")}
                 href={`?page=topic&topic=${encodeURIComponent(topic.label)}`}
               >
-                <div className="topic-icon">●</div>
+                <div className="topic-icon">
+                  {ICONS[topic.label] || ICONS.default}
+                </div>
                 <div>{topic.label}</div>
               </a>
             ))}
@@ -230,7 +251,6 @@ export default function ListPage({ tooltipRef }) {
       </section>
 
 
-      {/* LAYOUT GRID 3 PANEL ASLI KAMU (TIDAK HILANG) */}
       <div className="grid" id="datasets">
         <div className="panel wide">
           <h2>Katalog Dataset Terintegrasi</h2>
@@ -241,7 +261,7 @@ export default function ListPage({ tooltipRef }) {
               <li key={d.uuid}>
                 <a className="row-link" href={`?dataset=${d.uuid}`}>
                   <span className="name">
-                    <span className="badge">{pick(d, ["satuan"], "")}</span>{d.judul || "Tanpa judul"}
+                    <span></span>{d.judul || "Tanpa judul"}
                   </span>
                   <span className="meta">{d.organisasi ? d.organisasi.nama : ""}</span>
                 </a>
@@ -250,14 +270,12 @@ export default function ListPage({ tooltipRef }) {
           </ul>
         </div>
 
-        {/* GRAFIK D3.js (TIDAK HILANG, otomatis merender grafik dinas yang terpilih) */}
         <div className="panel">
           <h2>Dataset per OPD Terkait</h2>
           <div className="sub">Jumlah dataset yang cocok, dikelompokkan per organisasi</div>
-          <svg ref={orgChartRef} width="100%" height="280"></svg>
+          <svg ref={orgChartRef} width="100%" height="500"></svg>
         </div>
 
-        {/* PANEL DASHBOARD COCOK (TIDAK HILANG) */}
         <div className="panel">
           <h2>Dashboard Resmi Terkait</h2>
           <div className="sub">Klik untuk membuka dashboard aslinya</div>

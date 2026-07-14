@@ -17,8 +17,8 @@ export function hideTip(tooltipEl) {
 export function renderOrgChart(svgNode, rows, tooltipEl) {
   const svgEl = d3.select(svgNode);
   const width = svgNode.parentElement.clientWidth;
-  const height = 280;
-  const margin = { top: 8, right: 30, bottom: 20, left: 170 };
+  const height = 500;
+  const margin = { top: 8, right: 30, bottom: 20, left: 120 };
   svgEl.attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
 
   const counts = d3.rollup(rows, v => v.length, d => (d.organisasi ? d.organisasi.nama : "Tidak diketahui"));
