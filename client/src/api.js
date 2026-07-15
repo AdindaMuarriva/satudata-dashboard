@@ -21,6 +21,52 @@ export const THEME_KEYWORDS = [
   "penyandang", "gender", "perlindungan anak", "keluarga"
 ];
 
+export const HEALTH_KEYWORDS = [
+  "kesehatan", "kesehatan ibu", "kesehatan anak", "rumah sakit", "puskesmas",
+  "posyandu", "stunting", "imunisasi", "vaksin", "gizi", "dokter", "perawat",
+  "tenaga kesehatan", "penyakit", "pasien", "kematian ibu", "kematian bayi",
+  "air minum", "sanitasi", "bpjs", "jkn", "farmasi"
+];
+
+export const EDUCATION_KEYWORDS = [
+  "pendidikan", "sekolah", "siswa", "peserta didik", "murid", "guru",
+  "tenaga pendidik", "paud", "taman kanak", "madrasah", "sd ", "smp ",
+  "sma", "smk", "mahasiswa", "perguruan tinggi", "universitas", "kuliah",
+  "literasi", "melek huruf", "buta huruf", "angka partisipasi sekolah",
+  "putus sekolah", "beasiswa", "ijazah", "pendidikan anak usia dini"
+];
+
+export const INFRASTRUCTURE_KEYWORDS = [
+  "infrastruktur", "jalan", "jembatan", "transportasi", "angkutan",
+  "pelabuhan", "bandara", "terminal", "irigasi", "bendungan", "drainase",
+  "air minum", "air bersih", "sanitasi", "permukiman", "perumahan",
+  "bangunan", "konstruksi", "tata ruang", "jaringan listrik", "telekomunikasi",
+  "internet", "broadband", "menara", "penerangan jalan"
+];
+
+export const AGRICULTURE_KEYWORDS = [
+  "pertanian", "tanaman pangan", "hortikultura", "perkebunan", "peternakan",
+  "perikanan", "pangan", "sawah", "padi", "jagung", "panen", "pupuk",
+  "nelayan", "produksi pertanian", "komoditas"
+];
+
+export const SOCIAL_KEYWORDS = [
+  "sosial", "kesejahteraan", "kemiskinan", "bantuan sosial", "bansos", "pkh",
+  "disabilitas", "lansia", "panti", "fakir miskin", "perlindungan anak",
+  "perempuan", "gender", "keluarga", "kependudukan"
+];
+
+export const STATISTICS_KEYWORDS = [
+  "statistik", "statistik sektoral", "bps", "sensus", "survei", "publikasi statistik",
+  "data statistik", "statistical"
+];
+
+export const ENVIRONMENT_KEYWORDS = [
+  "lingkungan hidup", "lingkungan", "sampah", "limbah", "kualitas air", "kualitas udara",
+  "hutan", "konservasi", "emisi", "iklim", "pencemaran", "perubahan iklim",
+  "keanekaragaman hayati", "ruang terbuka hijau"
+];
+
 export const META_FIELDS = new Set([
   "bps_kode_provinsi", "bps_nama_provinsi", "kemendagri_kode_provinsi", "kemendagri_nama_provinsi",
   "bps_kode_kabupaten_kota", "bps_nama_kabupaten_kota", "kemendagri_kode_kabupaten_kota", "kemendagri_nama_kabupaten_kota",
@@ -163,3 +209,48 @@ export async function loadAcehTopo() {
   acehTopoCache = await res.json();
   return acehTopoCache;
 }
+
+export function isHealthRelevant(d) {
+  const haystack = [
+    d.judul, d.deskripsi, d.bidang, d.pengukuran,
+    d.topik && d.topik.nama,
+    d.organisasi && d.organisasi.nama,
+    d.organisasi && d.organisasi.keterangan
+  ].filter(Boolean).join(" ").toLowerCase();
+  return HEALTH_KEYWORDS.some(kw => haystack.includes(kw));
+}
+
+export function isEducationRelevant(d) {
+  const haystack = [
+    d.judul, d.deskripsi, d.bidang, d.pengukuran,
+    d.topik && d.topik.nama,
+    d.organisasi && d.organisasi.nama,
+    d.organisasi && d.organisasi.keterangan
+  ].filter(Boolean).join(" ").toLowerCase();
+  return EDUCATION_KEYWORDS.some(kw => haystack.includes(kw));
+}
+
+export function isInfrastructureRelevant(d) {
+  const haystack = [
+    d.judul, d.deskripsi, d.bidang, d.pengukuran,
+    d.topik && d.topik.nama,
+    d.organisasi && d.organisasi.nama,
+    d.organisasi && d.organisasi.keterangan
+  ].filter(Boolean).join(" ").toLowerCase();
+  return INFRASTRUCTURE_KEYWORDS.some(kw => haystack.includes(kw));
+}
+
+function matchesThemeKeywords(dataset, keywords) {
+  const haystack = [
+    dataset.judul, dataset.deskripsi, dataset.bidang, dataset.pengukuran,
+    dataset.topik && dataset.topik.nama,
+    dataset.organisasi && dataset.organisasi.nama,
+    dataset.organisasi && dataset.organisasi.keterangan
+  ].filter(Boolean).join(" ").toLowerCase();
+  return keywords.some(keyword => haystack.includes(keyword));
+}
+
+export const isAgricultureRelevant = dataset => matchesThemeKeywords(dataset, AGRICULTURE_KEYWORDS);
+export const isSocialRelevant = dataset => matchesThemeKeywords(dataset, SOCIAL_KEYWORDS);
+export const isStatisticsRelevant = dataset => matchesThemeKeywords(dataset, STATISTICS_KEYWORDS);
+export const isEnvironmentRelevant = dataset => matchesThemeKeywords(dataset, ENVIRONMENT_KEYWORDS);

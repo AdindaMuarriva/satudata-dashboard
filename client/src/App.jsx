@@ -7,6 +7,7 @@ import TopicPage from "./TopicPage";
 import FeaturePage from "./FeaturePage";
 import SearchResultsPage from "./SearchResultsPage";
 import ComparePage from "./ComparePage";
+import MasyarakatDashboardPage from "./MasyarakatDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
 
@@ -63,6 +64,22 @@ export default function App() {
     <SearchResultsPage query={query || ""} />
   ) : page === "compare" ? (
     <ComparePage datasetIds={datasets ? datasets.split(",").filter(Boolean) : []} tooltipRef={tooltipRef} />
+  ) : page === "dashboard-masyarakat" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} />
+  ) : page === "dashboard-kesehatan" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="kesehatan" />
+  ) : page === "dashboard-pendidikan" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="pendidikan" />
+  ) : page === "dashboard-infrastruktur" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="infrastruktur" />
+  ) : page === "dashboard-pertanian" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="pertanian" />
+  ) : page === "dashboard-sosial" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="sosial" />
+  ) : page === "dashboard-statistik" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="statistik" />
+  ) : page === "dashboard-lingkungan" ? (
+    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="lingkungan" />
   ) : org ? (
     <OrgPage orgName={org} tooltipRef={tooltipRef} />
   ) : (

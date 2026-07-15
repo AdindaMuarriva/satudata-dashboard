@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CONFIG, THEME_KEYWORDS, fetchJSON, fetchDatasetsMultiPage, unwrapArray,
-  isThemeRelevant, pick
+  pick
 } from "./api";
 import {
   Database,
@@ -44,6 +44,57 @@ const FEATURES = [
   { title: "Dokumen Geospasial", description: "Dokumen, peta, dan data geospasial." }
 ];
 
+const THEME_DASHBOARD_CARDS = [
+  {
+    flag: "DASHBOARD MASYARAKAT",
+    title: "Analisis Komparatif Indikator Kesejahteraan dan Ketahanan Sosial Masyarakat Aceh",
+    description: "Bandingkan tren indikator sosial, kependudukan, perlindungan kelompok rentan, dan kemiskinan secara terpadu.",
+    href: "?page=dashboard-masyarakat"
+  },
+  {
+    flag: "DASHBOARD KESEHATAN",
+    title: "Analisis Komparatif Indikator Kesehatan Masyarakat Aceh",
+    description: "Pantau perbandingan indikator layanan kesehatan, gizi, pencegahan penyakit, dan kesehatan lingkungan secara terpadu.",
+    href: "?page=dashboard-kesehatan"
+  },
+  {
+    flag: "DASHBOARD PENDIDIKAN",
+    title: "Analisis Komparatif Indikator Pendidikan Aceh",
+    description: "Pantau tren peserta didik, guru, satuan pendidikan, sarana belajar, dan akses pendidikan secara terpadu.",
+    href: "?page=dashboard-pendidikan"
+  },
+  {
+    flag: "DASHBOARD INFRASTRUKTUR",
+    title: "Analisis Komparatif Indikator Infrastruktur Aceh",
+    description: "Pantau tren jalan, jembatan, transportasi, air bersih, sanitasi, perumahan, dan konektivitas secara terpadu.",
+    href: "?page=dashboard-infrastruktur"
+  },
+  {
+    flag: "DASHBOARD PERTANIAN",
+    title: "Analisis Komparatif Indikator Pertanian Aceh",
+    description: "Pantau tren tanaman pangan, perkebunan, peternakan, perikanan, dan produksi pangan secara terpadu.",
+    href: "?page=dashboard-pertanian"
+  },
+  {
+    flag: "DASHBOARD SOSIAL",
+    title: "Analisis Komparatif Indikator Sosial Aceh",
+    description: "Pantau kesejahteraan sosial, kemiskinan, bantuan sosial, dan kelompok rentan secara terpadu.",
+    href: "?page=dashboard-sosial"
+  },
+  {
+    flag: "DASHBOARD STATISTIK",
+    title: "Analisis Komparatif Data Statistik Aceh",
+    description: "Bandingkan statistik sektoral, hasil sensus, survei, dan publikasi data Aceh.",
+    href: "?page=dashboard-statistik"
+  },
+  {
+    flag: "DASHBOARD LINGKUNGAN HIDUP",
+    title: "Analisis Komparatif Indikator Lingkungan Hidup Aceh",
+    description: "Pantau sampah, limbah, kualitas lingkungan, hutan, iklim, dan konservasi secara terpadu.",
+    href: "?page=dashboard-lingkungan"
+  }
+];
+
 export default function ListPage({ tooltipRef }) {
   const [allDatasets, setAllDatasets] = useState([]);
   const [themeDatasets, setThemeDatasets] = useState([]);
@@ -55,6 +106,7 @@ export default function ListPage({ tooltipRef }) {
 
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState("");
+  const [dashboardSlide, setDashboardSlide] = useState(0);
   
   // DEFAULT UTAMA: Mengatur pilihan OPD (Bisa menangkap redirect dari portal luar jika nanti diintegrasikan)
   const [org, setOrg] = useState("__all__"); 
@@ -144,7 +196,11 @@ export default function ListPage({ tooltipRef }) {
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-  const featuredDashboard = matchedDashboards[0];
+  const activeThemeDashboard = THEME_DASHBOARD_CARDS[dashboardSlide];
+
+  function moveDashboardSlide(direction) {
+    setDashboardSlide(current => (current + direction + THEME_DASHBOARD_CARDS.length) % THEME_DASHBOARD_CARDS.length);
+  }
 
   return (
     <div id="listView">
@@ -201,13 +257,14 @@ export default function ListPage({ tooltipRef }) {
               <div className="hero-panel-title">Informasi terbaru dan terverifikasi</div>
               <div className="hero-panel-sub">Data resmi Aceh dari berbagai OPD dapat diakses melalui portal ini.</div>
             </div>
-            <div className="hero-panel-card featured">
-              <div className="hero-panel-flag">DASHBOARD BENCANA</div>
-              <div className="hero-panel-title">Informasi perkembangan bencana alam di Provinsi Aceh</div>
-              <div className="hero-panel-sub">Akses peta dampak, infografik, dan dashboard terkini secara cepat.</div>
-              {featuredDashboard && featuredDashboard.url && (
-                <a className="hero-panel-link" href={featuredDashboard.url} target="_blank" rel="noreferrer">Buka Dashboard</a>
-              )}
+            <div className="hero-dashboard-switcher">
+              <div className="hero-panel-card featured">
+                <div className="hero-panel-flag">{activeThemeDashboard.flag}</div>
+                <div className="hero-panel-title">{activeThemeDashboard.title}</div>
+                <div className="hero-panel-sub">{activeThemeDashboard.description}</div>
+                <a className="hero-panel-link" href={activeThemeDashboard.href}>Buka Dashboard</a>
+              </div>
+              <button type="button" className="hero-dashboard-arrow next" onClick={() => moveDashboardSlide(1)} aria-label="Dashboard berikutnya"></button>
             </div>
           </div>
         </div>

@@ -226,39 +226,107 @@ export function renderUnitChart(svgNode, rows, tooltipEl) {
     .transition().duration(550).attr("width", d => x(d.value) - margin.left);
 }
 
-export function renderMultiTrendChart(container, series, tooltipEl) {
+export function renderMultiTrendChart(container, series, tooltipEl, options = {}) {
+  const { indexed = false, maxSeries = Infinity } = options;
   d3.select(container).selectAll("*").remove();
+  let visibleSeries = series.filter(item => item.data?.length);
+  if (indexed) {
+    visibleSeries = visibleSeries
+      .filter(item => item.data.length >= 2 && Number(item.data[0].value) !== 0)
+      .sort((a, b) => b.data.length - a.data.length)
+      .slice(0, maxSeries)
+      .map(item => {
+        const baseline = Number(item.data[0].value);
+        return {
+          ...item,
+          data: item.data.map(point => ({
+            ...point,
+            rawValue: point.value,
+            value: (Number(point.value) / baseline) * 100
+          }))
+        };
+      });
+  } else {
+    visibleSeries = visibleSeries.slice(0, maxSeries);
+  }
+  if (!visibleSeries.length) return;
   const width = container.clientWidth || 800;
-  const height = 410;
-  const margin = { top: 28, right: 185, bottom: 72, left: 76 };
-  const points = series.flatMap(item => item.data.map(point => ({ ...point, series: item })));
+  const height = 450;
+  const margin = { top: 28, right: 30, bottom: 118, left: 76 };
+  const points = visibleSeries.flatMap(item => item.data.map(point => ({ ...point, series: item })));
   const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
   const x = d3.scaleLinear().domain(d3.extent(points, d => d.year)).range([margin.left, width - margin.right]);
-  const y = d3.scaleLinear().domain([0, (d3.max(points, d => d.value) || 1) * 1.12]).nice().range([height - margin.bottom, margin.top]);
-  const colors = ["#d92419", "#1f6feb", "#0f8a63", "#9a5bd1", "#d97706"];
-  const color = d3.scaleOrdinal(colors).domain(series.map(item => item.uuid));
+  const yExtent = d3.extent(points, d => d.value);
+  const yDomain = indexed
+    ? [Math.max(0, (yExtent[0] || 0) - Math.max(5, ((yExtent[1] || 100) - (yExtent[0] || 100)) * .15)), (yExtent[1] || 100) + Math.max(5, ((yExtent[1] || 100) - (yExtent[0] || 100)) * .15)]
+    : [0, (yExtent[1] || 1) * 1.12];
+  const y = d3.scaleLinear().domain(yDomain).nice().range([height - margin.bottom, margin.top]);
+  const color = d3.scaleSequential(d3.interpolateTurbo).domain([0, Math.max(visibleSeries.length - 1, 1)]);
   const chart = svg.append("g");
   chart.append("g").attr("class", "comparison-grid").attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5).tickSize(-(width - margin.left - margin.right)).tickFormat(""));
   chart.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(8).tickFormat(d3.format("d")));
   chart.append("g").attr("class", "axis comparison-y-axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5));
   const line = d3.line().curve(d3.curveMonotoneX).x(d => x(d.year)).y(d => y(d.value));
-  series.forEach(item => {
-    const stroke = color(item.uuid);
+  visibleSeries.forEach((item, index) => {
+    const stroke = color(index);
     chart.append("path").datum(item.data).attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 6).attr("stroke-linecap", "round").attr("d", line);
     chart.append("path").datum(item.data).attr("fill", "none").attr("stroke", stroke).attr("stroke-width", 3).attr("stroke-linecap", "round").attr("d", line);
     chart.selectAll(`.point-${item.uuid}`).data(item.data).join("circle").attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", 4).attr("fill", stroke)
       .attr("stroke", "#fff").attr("stroke-width", 2)
-      .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${item.title}</b><br>${d.year}: ${d3.format(",.2f")(d.value)} ${item.satuan}`, event))
+      .on("mousemove", (event, d) => showTip(tooltipEl, indexed
+        ? `<b>${item.title}</b><br>${d.year}: indeks ${d3.format(",.1f")(d.value)}<br>Nilai asli: ${d3.format(",.2f")(d.rawValue)} ${item.satuan}`
+        : `<b>${item.title}</b><br>${d.year}: ${d3.format(",.2f")(d.value)} ${item.satuan}`, event))
       .on("mouseleave", () => hideTip(tooltipEl));
     const last = item.data[item.data.length - 1];
-    chart.append("text").attr("x", x(last.year) + 10).attr("y", y(last.value) + 4).attr("fill", stroke).attr("font-size", 11).attr("font-weight", 700)
+    chart.append("text").attr("x", x(last.year) + 10).attr("y", y(last.value) + 4).attr("fill", stroke).attr("font-size", 11).attr("font-weight", 700).attr("opacity", 0)
       .text(`${item.title.slice(0, 18)}${item.title.length > 18 ? "…" : ""}`);
   });
-  const legend = svg.append("g").attr("transform", `translate(${margin.left},${height - 22})`);
-  series.forEach((item, index) => {
-    const entry = legend.append("g").attr("transform", `translate(${index * 150},0)`);
-    entry.append("circle").attr("r", 5).attr("fill", color(item.uuid));
+  const legend = svg.append("g").attr("transform", `translate(${margin.left},${height - 74})`);
+  if (visibleSeries.length <= 10) visibleSeries.forEach((item, index) => {
+    const columnWidth = Math.max(160, (width - margin.left - margin.right) / 2);
+    const entry = legend.append("g").attr("transform", `translate(${(index % 2) * columnWidth},${Math.floor(index / 2) * 24})`);
+    entry.append("circle").attr("r", 5).attr("fill", color(index));
     entry.append("text").attr("x", 10).attr("y", 4).attr("fill", "#4f4544").attr("font-size", 11).text(`${item.title.slice(0, 22)}${item.title.length > 22 ? "…" : ""} (${item.satuan})`);
   });
+  if (visibleSeries.length > 10) legend.append("text").attr("fill", "#4f4544").attr("font-size", 11)
+    .text(`${series.length} dataset dicakup; ${visibleSeries.length} memiliki data tren. Arahkan kursor ke titik untuk detailnya.`);
+}
+
+export function renderDonutChart(container, data, tooltipEl) {
+  d3.select(container).selectAll("*").remove();
+  const width = container.clientWidth || 420;
+  const height = 370;
+  const radius = Math.min(width * 0.28, 118);
+  const colors = ["#d92419", "#1f6feb", "#0f8a63", "#9a5bd1", "#d97706", "#de5e40"];
+  const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+  const pie = d3.pie().sort(null).value(d => d.value)(data);
+  const arc = d3.arc().innerRadius(radius * .58).outerRadius(radius);
+  const color = d3.scaleOrdinal(colors).domain(data.map(d => d.label));
+  const center = svg.append("g").attr("transform", `translate(${width * .31},${height / 2})`);
+  center.selectAll("path").data(pie).join("path").attr("d", arc).attr("fill", d => color(d.data.label)).attr("stroke", "#fff").attr("stroke-width", 3)
+    .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${d.data.label}</b><br>${d.data.value} dataset`, event)).on("mouseleave", () => hideTip(tooltipEl));
+  center.append("text").attr("text-anchor", "middle").attr("y", -6).attr("fill", "#4f4544").attr("font-size", 14).attr("font-weight", 700).text("Total dataset");
+  center.append("text").attr("text-anchor", "middle").attr("y", 22).attr("fill", "#8b1e21").attr("font-size", 30).attr("font-weight", 800).text(d3.sum(data, d => d.value));
+  const legend = svg.append("g").attr("transform", `translate(${width * .62},42)`);
+  data.forEach((item, index) => {
+    const row = legend.append("g").attr("transform", `translate(0,${index * 48})`);
+    row.append("rect").attr("width", 14).attr("height", 14).attr("rx", 4).attr("fill", color(item.label));
+    row.append("text").attr("x", 22).attr("y", 12).attr("fill", "#4f4544").attr("font-size", 13).attr("font-weight", 600).text(`${item.label} (${item.value})`);
+  });
+}
+
+export function renderHorizontalBarChart(container, data, tooltipEl) {
+  d3.select(container).selectAll("*").remove();
+  const width = container.clientWidth || 420;
+  const height = Math.max(330, data.length * 52 + 52);
+  const margin = { top: 12, right: 34, bottom: 34, left: 175 };
+  const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+  const x = d3.scaleLinear().domain([0, (d3.max(data, d => d.value) || 1) * 1.15]).nice().range([margin.left, width - margin.right]);
+  const y = d3.scaleBand().domain(data.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(.28);
+  svg.append("g").attr("class", "axis chart-axis-large").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(4));
+  svg.append("g").attr("class", "axis chart-axis-large").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y));
+  svg.selectAll("rect").data(data).join("rect").attr("x", margin.left).attr("y", d => y(d.label)).attr("height", y.bandwidth()).attr("rx", 6).attr("fill", "#9a5bd1")
+    .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${d.label}</b><br>${d.value} dataset`, event)).on("mouseleave", () => hideTip(tooltipEl))
+    .transition().duration(500).attr("width", d => x(d.value) - margin.left);
 }
