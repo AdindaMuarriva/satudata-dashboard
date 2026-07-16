@@ -75,6 +75,82 @@ export const META_FIELDS = new Set([
   "tahun", "tingkat_penyajian", "created_at", "updated_at", "deleted_at", "id", "uuid", "satuan"
 ]);
 
+export const LOCAL_DATASETS_KEY = "satudata_local_datasets";
+
+export function getLocalDatasets() {
+  if (typeof window === "undefined") return [];
+  try {
+    const items = JSON.parse(window.localStorage.getItem(LOCAL_DATASETS_KEY) || "[]");
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalDataset(dataset) {
+  const datasets = getLocalDatasets();
+  window.localStorage.setItem(LOCAL_DATASETS_KEY, JSON.stringify([dataset, ...datasets]));
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
+}
+
+export function updateLocalDataset(uuid, changes) {
+  const datasets = getLocalDatasets().map(dataset => dataset.uuid === uuid ? { ...dataset, ...changes, updated_at: new Date().toISOString() } : dataset);
+  window.localStorage.setItem(LOCAL_DATASETS_KEY, JSON.stringify(datasets));
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
+}
+
+export function getDeletedDatasetUuids() {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem("satudata_deleted_uuids") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function getEditedOverrides() {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem("satudata_edited_overrides") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function saveDatasetChanges(uuid, changes) {
+  if (String(uuid).startsWith("local-")) {
+    const datasets = getLocalDatasets().map(dataset => 
+      dataset.uuid === uuid ? { ...dataset, ...changes, updated_at: new Date().toISOString() } : dataset
+    );
+    window.localStorage.setItem(LOCAL_DATASETS_KEY, JSON.stringify(datasets));
+  } else {
+    const overrides = getEditedOverrides();
+    const currentOverride = overrides[uuid] || {};
+    overrides[uuid] = { ...currentOverride, ...changes, uuid, updated_at: new Date().toISOString() };
+    window.localStorage.setItem("satudata_edited_overrides", JSON.stringify(overrides));
+  }
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
+}
+
+export function deleteDataset(uuid) {
+  if (String(uuid).startsWith("local-")) {
+    const datasets = getLocalDatasets().filter(dataset => dataset.uuid !== uuid);
+    window.localStorage.setItem(LOCAL_DATASETS_KEY, JSON.stringify(datasets));
+    
+    const overrides = getEditedOverrides();
+    if (overrides[uuid]) {
+      delete overrides[uuid];
+      window.localStorage.setItem("satudata_edited_overrides", JSON.stringify(overrides));
+    }
+  } else {
+    const deleted = getDeletedDatasetUuids();
+    if (!deleted.includes(uuid)) {
+      window.localStorage.setItem("satudata_deleted_uuids", JSON.stringify([...deleted, uuid]));
+    }
+  }
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
+}
+
 export async function fetchJSON(path) {
   const res = await fetch(CONFIG.baseUrl + path, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`${path} -> HTTP ${res.status}`);
@@ -166,20 +242,50 @@ export async function fetchDatasetsMultiPage() {
   }
   const results = await Promise.all(pages);
   let combined = [];
-  let totalCount = 0;
+  let apiTotalCount = 0;
   results.forEach(r => {
     if (!r) return;
     combined = combined.concat(unwrapArray(r));
-    totalCount = +pick(r, ["count"], totalCount) || totalCount;
+    apiTotalCount = +pick(r, ["count"], apiTotalCount) || apiTotalCount;
   });
-  return { rows: combined, totalCount };
+
+  const localDatasets = getLocalDatasets();
+  const deletedUuids = new Set(getDeletedDatasetUuids());
+  const overrides = getEditedOverrides();
+
+  // Hitung jumlah dataset API yang ditandai hapus
+  const remoteDeletedCount = combined.filter(d => deletedUuids.has(d.uuid)).length;
+
+  let all = [...localDatasets, ...combined];
+  all = all.map(d => {
+    if (overrides[d.uuid]) {
+      return overrides[d.uuid];
+    }
+    return d;
+  }).filter(d => !deletedUuids.has(d.uuid));
+
+  const totalCount = (apiTotalCount || combined.length) + localDatasets.length - remoteDeletedCount;
+
+  return { rows: all, totalCount };
 }
 
 export async function fetchDatasetMeta(uuid) {
+  const overrides = getEditedOverrides();
+  if (overrides[uuid]) return overrides[uuid];
+
+  const localDataset = getLocalDatasets().find(item => item.uuid === uuid);
+  if (localDataset) return localDataset;
   return fetchJSON(`/api/datasets/${uuid}`);
 }
 
 export async function fetchDatasetValues(uuid, tahun) {
+  const overrides = getEditedOverrides();
+  const dataset = overrides[uuid] || getLocalDatasets().find(item => item.uuid === uuid);
+  if (dataset) {
+    const rows = (dataset.csvRows || []).filter(row => !tahun || !row.tahun || String(row.tahun) === String(tahun));
+    const years = [...new Set((dataset.csvRows || []).map(row => row.tahun).filter(Boolean))].map(year => ({ year }));
+    return { rows, years };
+  }
   const path = `/api/datasets/${uuid}/datasources/json?tahun=${tahun}&limit=500&page=0&sortByColumn=&sortByType=`;
   const json = await fetchJSON(path);
   const years = (json.metadata && json.metadata.years) ? json.metadata.years.map(y => y.year) : [];

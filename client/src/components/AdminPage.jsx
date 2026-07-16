@@ -7,12 +7,14 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { CONFIG, fetchDatasetsMultiPage, fetchJSON, pick } from "../api";
+import { CONFIG, fetchDatasetsMultiPage, fetchJSON, getLocalDatasets, pick } from "../api";
 import Dashboard from "./admin/Dashboard";
 import DatasetPage from "./admin/DatasetPage";
 import OPDPage from "./admin/OPDPage";
 import UserPage from "./admin/UserPage";
 import SettingPage from "./admin/SettingPage";
+import AddDatasetPage from "./admin/AddDatasetPage";
+import EditDatasetPage from "./admin/EditDatasetPage";
 
 function readAdminCount() {
   if (typeof window === "undefined") return 0;
@@ -55,6 +57,16 @@ export default function AdminPage({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activePage, setActivePage] = useState("dashboard");
+  const [editDatasetUuid, setEditDatasetUuid] = useState(null);
+
+  function handleDatasetSaved() {
+    const newestDataset = getLocalDatasets()[0];
+    if (newestDataset) {
+      setDatasets(current => [newestDataset, ...current.filter(item => item.uuid !== newestDataset.uuid)].slice(0, 8));
+      setStats(current => ({ ...current, totalDatasets: current.totalDatasets + 1 }));
+    }
+    setActivePage("dashboard");
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -91,8 +103,16 @@ export default function AdminPage({ user, onLogout }) {
     }
 
     load();
+
+    const handleUpdate = () => {
+      load();
+    };
+
+    window.addEventListener("satudata-local-datasets-updated", handleUpdate);
+
     return () => {
       mounted = false;
+      window.removeEventListener("satudata-local-datasets-updated", handleUpdate);
     };
   }, []);
 
@@ -206,10 +226,29 @@ export default function AdminPage({ user, onLogout }) {
             resolveOrgName={resolveOrgName}
             resolveYear={resolveYear}
             resolveStatus={resolveStatus}
+            onAddDataset={() => setActivePage("add-dataset")}
+            onImportCsv={() => setActivePage("import-csv")}
+            onManageDatasets={() => setActivePage("dataset")}
           />
         )}
 
-        {activePage === "dataset" && <DatasetPage />}
+        {activePage === "dataset" && (
+          <DatasetPage
+            onAddDataset={() => setActivePage("add-dataset")}
+            onEditDataset={(uuid) => {
+              setEditDatasetUuid(uuid);
+              setActivePage("edit-dataset");
+            }}
+          />
+        )}
+        {activePage === "edit-dataset" && (
+          <EditDatasetPage
+            uuid={editDatasetUuid}
+            onBack={() => setActivePage("dataset")}
+          />
+        )}
+        {activePage === "add-dataset" && <AddDatasetPage onBack={() => setActivePage("dashboard")} onSaved={handleDatasetSaved} />}
+        {activePage === "import-csv" && <AddDatasetPage mode="csv" onBack={() => setActivePage("dashboard")} onSaved={handleDatasetSaved} />}
         {activePage === "opd" && <OPDPage />}
         {activePage === "user" && <UserPage />}
         {activePage === "settings" && <SettingPage />}

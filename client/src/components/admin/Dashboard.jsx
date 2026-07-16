@@ -23,6 +23,10 @@ export default function Dashboard({
   resolveOrgName,
   resolveYear,
   resolveStatus,
+  onAddDataset,
+  onImportCsv,
+  onManageDatasets,
+  onViewRecentDatasets,
 }) {
   return (
     <>
@@ -67,7 +71,7 @@ export default function Dashboard({
 
         <div className="quick-grid">
 
-          <button className="quick-card">
+          <button className="quick-card" onClick={onAddDataset}>
 
             <Plus size={30} />
 
@@ -79,7 +83,7 @@ export default function Dashboard({
 
           </button>
 
-          <button className="quick-card">
+          <button className="quick-card" onClick={onImportCsv}>
 
             <Upload size={30} />
 
@@ -91,7 +95,7 @@ export default function Dashboard({
 
           </button>
 
-          <button className="quick-card">
+          <button className="quick-card" onClick={onManageDatasets}>
 
             <Database size={30} />
 
@@ -99,6 +103,18 @@ export default function Dashboard({
 
             <p>
               Edit, perbarui, maupun menghapus dataset yang tersedia.
+            </p>
+
+          </button>
+
+          <button className="quick-card" onClick={onViewRecentDatasets}>
+
+            <FileText size={30} />
+
+            <h3>Dataset Baru</h3>
+
+            <p>
+              Lihat dan edit dataset yang baru ditambah atau diimport.
             </p>
 
           </button>

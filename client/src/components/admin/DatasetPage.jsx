@@ -5,12 +5,14 @@ import {
   Pencil,
   Trash2,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 
 import {
   CONFIG,
   fetchDatasetsMultiPage,
   pick,
+  deleteDataset,
 } from "../../api";
 
 function resolveTitle(dataset) {
@@ -43,12 +45,13 @@ function resolveYear(dataset) {
   return raw;
 }
 
-export default function DatasetPage() {
+export default function DatasetPage({ onAddDataset, onEditDataset }) {
 
   const [datasets, setDatasets] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   async function loadData() {
 
@@ -91,6 +94,18 @@ export default function DatasetPage() {
 
   },[keyword,datasets]);
 
+  function handleDeleteClick(item) {
+    setDeleteTarget(item);
+  }
+
+  function handleConfirmDelete() {
+    if (deleteTarget) {
+      deleteDataset(deleteTarget.uuid || deleteTarget.id);
+      setDeleteTarget(null);
+      loadData();
+    }
+  }
+
   return(
 
 <div className="admin-content">
@@ -107,7 +122,7 @@ Tambah, edit maupun menghapus dataset.
 
 </div>
 
-<button className="btn-primary">
+<button className="btn-primary" onClick={onAddDataset}>
 
 <Plus size={18}/>
 
@@ -138,8 +153,11 @@ onChange={(e)=>setKeyword(e.target.value)}
 </div>
 
 <button
+
 className="btn-outline"
+
 onClick={loadData}
+
 >
 
 <RefreshCw size={18}/>
@@ -187,7 +205,9 @@ Memuat data...
 {!loading && filtered.map((item,index)=>(
 
 <tr
+
 key={item.uuid || index}
+
 >
 
 <td>
@@ -212,13 +232,13 @@ key={item.uuid || index}
 
 <div className="table-action">
 
-<button>
+<button onClick={() => onEditDataset(item.uuid || item.id)} title="Edit Dataset">
 
 <Pencil size={16}/>
 
 </button>
 
-<button>
+<button onClick={() => handleDeleteClick(item)} title="Hapus Dataset" className="delete-btn">
 
 <Trash2 size={16}/>
 
@@ -232,11 +252,42 @@ key={item.uuid || index}
 
 ))}
 
+{!loading && filtered.length === 0 && (
+<tr>
+<td colSpan={4} className="admin-empty">
+Tidak ada dataset yang ditemukan.
+</td>
+</tr>
+)}
+
 </tbody>
 
 </table>
 
 </div>
+
+{deleteTarget && (
+  <div className="modal-backdrop">
+    <div className="modal-content">
+      <div className="modal-icon">
+        <AlertTriangle size={32} />
+      </div>
+      <h3>Hapus Dataset?</h3>
+      <p>
+        Apakah Anda yakin ingin menghapus dataset <strong>{resolveTitle(deleteTarget)}</strong>?
+        Tindakan ini tidak dapat dibatalkan.
+      </p>
+      <div className="modal-actions">
+        <button className="btn-outline" onClick={() => setDeleteTarget(null)}>
+          Batal
+        </button>
+        <button className="btn-danger" onClick={handleConfirmDelete}>
+          Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 </div>
 
