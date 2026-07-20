@@ -205,6 +205,14 @@ export async function renderChoroplethMap(container, rows, satuan, color, toolti
     .on("mouseleave", () => hideTip(tooltipEl));
 }
 
+export async function renderRegionalChoropleth(container, rows, satuan, tooltipEl) {
+  const values = rows.map(row => Number(row.value)).filter(Number.isFinite);
+  const [min, max] = d3.extent(values);
+  const color = d3.scaleSequential(d3.interpolateYlOrRd)
+    .domain(min === max ? [0, max || 1] : [min, max]);
+  return renderChoroplethMap(container, rows, satuan, color, tooltipEl);
+}
+
 export function renderUnitChart(svgNode, rows, tooltipEl) {
   const svg = d3.select(svgNode);
   const width = svgNode.parentElement.clientWidth || 420;

@@ -215,10 +215,10 @@ export default function ListPage({ tooltipRef }) {
         <div className="hero-head">
           <div className="brand">Satu Data Aceh</div>
           <nav className="hero-nav">
-            <a href="#datasets">Dataset</a>
+            <a href="?#datasets">Dataset</a>
             <a href={`?page=feature&feature=${encodeURIComponent("Dokumen Geospasial")}`}>Mapset</a>
             <a href={`?page=feature&feature=${encodeURIComponent("Dataset")}`}>Pemanfaatan Data</a>
-            <a href="#instansi">Instansi</a>
+            <a href="?#instansi">Instansi</a>
             <a href="?page=topic&topic=Semua">Group</a>
             <a href="?page=all-orgs">Bidang Urusan</a>
           </nav>
@@ -273,7 +273,7 @@ export default function ListPage({ tooltipRef }) {
               <div className="hero-panel-title">Informasi terbaru dan terverifikasi</div>
               <div className="hero-panel-sub">Data resmi Aceh dari berbagai OPD dapat diakses melalui portal ini.</div>
             </div>
-            <div className="hero-dashboard-switcher">
+            <div className="hero-dashboard-switcher" id="dashboards">
               <button type="button" className="hero-dashboard-arrow prev" onClick={() => moveDashboardSlide(-1)} aria-label="Dashboard sebelumnya"></button>
               <div className="hero-panel-card featured">
                 <div className="hero-panel-flag">{activeThemeDashboard.flag}</div>
