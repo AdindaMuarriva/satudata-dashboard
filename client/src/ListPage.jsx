@@ -10,7 +10,9 @@ import {
   Baby,
   Accessibility,
   PersonStanding,
-  HandCoins
+  HandCoins,
+  AlertTriangle,
+  ShieldCheck
 } from "lucide-react";
 import { renderOrgChart } from "./charts";
 
@@ -93,6 +95,11 @@ const THEME_DASHBOARD_CARDS = [
     description: "Pantau sampah, limbah, kualitas lingkungan, hutan, iklim, dan konservasi secara terpadu.",
     href: "?page=dashboard-lingkungan"
   }
+];
+
+const EXTERNAL_SHORTCUTS = [
+  { key: "bencana", label: "Dashboard Bencana Aceh", href: "https://bencana.acehprov.go.id/", Icon: AlertTriangle },
+  { key: "standar-data", label: "Standar Data", href: "https://ms-sds.web.bps.go.id/sds", Icon: ShieldCheck }
 ];
 
 export default function ListPage({ tooltipRef }) {
@@ -209,11 +216,11 @@ export default function ListPage({ tooltipRef }) {
           <div className="brand">Satu Data Aceh</div>
           <nav className="hero-nav">
             <a href="#datasets">Dataset</a>
-            <a href="#features">Mapset</a>
-            <a href="#features">Pemanfaatan Data</a>
+            <a href={`?page=feature&feature=${encodeURIComponent("Dokumen Geospasial")}`}>Mapset</a>
+            <a href={`?page=feature&feature=${encodeURIComponent("Dataset")}`}>Pemanfaatan Data</a>
             <a href="#instansi">Instansi</a>
-            <a href="#features">Group</a>
-            <a href="#features">Bidang Urusan</a>
+            <a href="?page=topic&topic=Semua">Group</a>
+            <a href="?page=all-orgs">Bidang Urusan</a>
           </nav>
           <button type="button" className="hero-login" onClick={handleAdminLogin}>Login</button>
         </div>
@@ -250,6 +257,15 @@ export default function ListPage({ tooltipRef }) {
                 <span className="hero-summary-label">Dashboard Resmi</span>
               </div>
             </div>
+
+            <div className="hero-shortcut-row">
+              {EXTERNAL_SHORTCUTS.map(({ key, label, href, Icon }) => (
+                <a key={key} className="hero-shortcut-card" href={href} target="_blank" rel="noopener noreferrer">
+                  <span className="hero-shortcut-icon"><Icon size={22} /></span>
+                  <span>{label}</span>
+                </a>
+              ))}
+            </div>
           </div>
 
           <div className="hero-panel">
@@ -258,11 +274,23 @@ export default function ListPage({ tooltipRef }) {
               <div className="hero-panel-sub">Data resmi Aceh dari berbagai OPD dapat diakses melalui portal ini.</div>
             </div>
             <div className="hero-dashboard-switcher">
+              <button type="button" className="hero-dashboard-arrow prev" onClick={() => moveDashboardSlide(-1)} aria-label="Dashboard sebelumnya"></button>
               <div className="hero-panel-card featured">
                 <div className="hero-panel-flag">{activeThemeDashboard.flag}</div>
                 <div className="hero-panel-title">{activeThemeDashboard.title}</div>
                 <div className="hero-panel-sub">{activeThemeDashboard.description}</div>
                 <a className="hero-panel-link" href={activeThemeDashboard.href}>Buka Dashboard</a>
+                <div className="hero-dashboard-dots">
+                  {THEME_DASHBOARD_CARDS.map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className={"hero-dashboard-dot" + (index === dashboardSlide ? " active" : "")}
+                      aria-label={`Ke slide ${index + 1}`}
+                      onClick={() => setDashboardSlide(index)}
+                    />
+                  ))}
+                </div>
               </div>
               <button type="button" className="hero-dashboard-arrow next" onClick={() => moveDashboardSlide(1)} aria-label="Dashboard berikutnya"></button>
             </div>

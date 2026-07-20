@@ -14,6 +14,7 @@ import {
   pickAggregator
 } from "./api";
 import { renderDonutChart, renderHorizontalBarChart, renderMultiTrendChart, renderOrgChart } from "./charts";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 
 const TREND_BATCH_SIZE = 4;
 
@@ -272,6 +273,11 @@ export default function MasyarakatDashboardPage({ tooltipRef, theme = "masyaraka
   }[theme] || "Masyarakat";
   const title = dashboardTitle(datasets, theme);
 
+  const shortcuts = [
+    { key: "bencana", label: "Dashboard Bencana Aceh", href: "https://bencana.acehprov.go.id/", Icon: AlertTriangle },
+    { key: "standar-data", label: "Standar Data", href: "https://ms-sds.web.bps.go.id/sds", Icon: ShieldCheck }
+  ];
+
   return (
     <main className="community-dashboard-page">
       <a className="back-link" href="?">← Kembali ke beranda</a>
@@ -279,6 +285,15 @@ export default function MasyarakatDashboardPage({ tooltipRef, theme = "masyaraka
         <span>DASHBOARD {themeLabel.toUpperCase()}</span>
         <h1>{title}</h1>
         <p>{themeDescription} Dashboard memuat data terbaru saat halaman dibuka.</p>
+      </section>
+
+      <section className="dashboard-shortcut-grid" aria-label="Pintasan dashboard lainnya">
+        {shortcuts.map(({ key, label, href, Icon }) => (
+          <a key={key} className="dashboard-shortcut-card" href={href} target="_blank" rel="noopener noreferrer">
+            <span className="dashboard-shortcut-icon"><Icon size={26} /></span>
+            <span>{label}</span>
+          </a>
+        ))}
       </section>
 
       {loading ? <div className="search-result-message"><p>Menyiapkan perbandingan dataset {themeLabel}...</p></div> : error ? <div className="search-result-message"><p>{error}</p></div> : (
