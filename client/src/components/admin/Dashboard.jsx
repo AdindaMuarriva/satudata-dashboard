@@ -27,6 +27,7 @@ export default function Dashboard({
   onImportCsv,
   onManageDatasets,
   onViewRecentDatasets,
+  onViewReport,
 }) {
   return (
     <>
@@ -119,7 +120,7 @@ export default function Dashboard({
 
           </button>
 
-          <button className="quick-card">
+          <button className="quick-card" onClick={onViewReport}>
 
             <FileText size={30} />
 

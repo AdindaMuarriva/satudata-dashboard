@@ -15,6 +15,8 @@ import UserPage from "./admin/UserPage";
 import SettingPage from "./admin/SettingPage";
 import AddDatasetPage from "./admin/AddDatasetPage";
 import EditDatasetPage from "./admin/EditDatasetPage";
+import RecentDatasetsPage from "./admin/RecentDatasetsPage";
+import ReportPage from "./admin/ReportPage";
 
 function readAdminCount() {
   if (typeof window === "undefined") return 0;
@@ -58,6 +60,7 @@ export default function AdminPage({ user, onLogout }) {
   const [error, setError] = useState("");
   const [activePage, setActivePage] = useState("dashboard");
   const [editDatasetUuid, setEditDatasetUuid] = useState(null);
+  const [editReturnPage, setEditReturnPage] = useState("dataset");
 
   function handleDatasetSaved() {
     const newestDataset = getLocalDatasets()[0];
@@ -229,14 +232,30 @@ export default function AdminPage({ user, onLogout }) {
             onAddDataset={() => setActivePage("add-dataset")}
             onImportCsv={() => setActivePage("import-csv")}
             onManageDatasets={() => setActivePage("dataset")}
+            onViewRecentDatasets={() => setActivePage("recent-datasets")}
+            onViewReport={() => setActivePage("report")}
           />
         )}
+
+        {activePage === "recent-datasets" && (
+          <RecentDatasetsPage
+            onBack={() => setActivePage("dashboard")}
+            onEditDataset={(uuid) => {
+              setEditDatasetUuid(uuid);
+              setEditReturnPage("recent-datasets");
+              setActivePage("edit-dataset");
+            }}
+          />
+        )}
+
+        {activePage === "report" && <ReportPage onBack={() => setActivePage("dashboard")} />}
 
         {activePage === "dataset" && (
           <DatasetPage
             onAddDataset={() => setActivePage("add-dataset")}
             onEditDataset={(uuid) => {
               setEditDatasetUuid(uuid);
+              setEditReturnPage("dataset");
               setActivePage("edit-dataset");
             }}
           />
@@ -244,7 +263,7 @@ export default function AdminPage({ user, onLogout }) {
         {activePage === "edit-dataset" && (
           <EditDatasetPage
             uuid={editDatasetUuid}
-            onBack={() => setActivePage("dataset")}
+            onBack={() => setActivePage(editReturnPage)}
           />
         )}
         {activePage === "add-dataset" && <AddDatasetPage onBack={() => setActivePage("dashboard")} onSaved={handleDatasetSaved} />}
