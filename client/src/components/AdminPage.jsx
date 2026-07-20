@@ -180,7 +180,7 @@ export default function AdminPage({ user, onLogout }) {
 
         </nav>
 
-        <button className="sidebar-logout" onClick={onLogout}>
+        <button className="sidebar-logout" style={{ marginTop: 28 }} onClick={onLogout}>
           <LogOut size={18} />
           Logout
         </button>
