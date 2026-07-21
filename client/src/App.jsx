@@ -8,6 +8,7 @@ import FeaturePage from "./FeaturePage";
 import SearchResultsPage from "./SearchResultsPage";
 import ComparePage from "./ComparePage";
 import MasyarakatDashboardPage from "./MasyarakatDashboardPage";
+import AgricultureDashboardPage from "./AgricultureDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
 
@@ -73,7 +74,7 @@ export default function App() {
   ) : page === "dashboard-infrastruktur" ? (
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="infrastruktur" />
   ) : page === "dashboard-pertanian" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="pertanian" />
+    <AgricultureDashboardPage />
   ) : page === "dashboard-sosial" ? (
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="sosial" />
   ) : page === "dashboard-statistik" ? (
