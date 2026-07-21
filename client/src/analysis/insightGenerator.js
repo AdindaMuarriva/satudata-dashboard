@@ -4,9 +4,10 @@ function numericValue(value) {
 
 function filterRows(rows, filters = {}) {
   return rows.filter(row => {
+    const matchesYear = !filters.year || row.tahun === undefined || row.tahun === null || String(row.tahun) === String(filters.year);
     const matchesRegion = !filters.region || filters.region === "Seluruh Aceh" || row.kabupaten === filters.region;
     const matchesCommodity = !filters.commodity || filters.commodity === "Semua komoditas" || row.komoditas === filters.commodity;
-    return matchesRegion && matchesCommodity;
+    return matchesYear && matchesRegion && matchesCommodity;
   });
 }
 
@@ -38,10 +39,22 @@ function createTrendChange(rows, valueColumn) {
   return { previous, current, change, percentChange };
 }
 
-function emptyInsight() {
+function emptyInsight(preprocessingResult) {
+  const rows = preprocessingResult?.cleanedData || [];
+  const row = rows[0] || {};
+  const location = row.kabupaten || row.kecamatan || row.desa || row.provinsi;
+  const period = row.tahun ? ` pada tahun ${row.tahun}` : "";
+  const commodity = row.komoditas || row.kategori;
+  const context = [
+    location ? `wilayah ${location}` : "",
+    commodity ? `komoditas/kategori ${commodity}` : "",
+    row.satuan ? `satuan ${row.satuan}` : ""
+  ].filter(Boolean).join(", ");
   return {
-    title: "Insight belum tersedia",
-    summary: "Belum cukup data untuk menghasilkan insight.",
+    title: "Ringkasan Dataset",
+    summary: rows.length === 1
+      ? `Dataset mencatat satu observasi${period}${context ? ` untuk ${context}` : ""}. Karena tidak terdapat metrik kuantitatif yang dapat dihitung, informasi disajikan sebagai deskripsi data dan perbandingan antarwilayah atau antarperiode belum dapat dilakukan.`
+      : `Dataset berisi ${rows.length} observasi${context ? ` dengan contoh ${context}` : ""}, tetapi tidak memiliki metrik kuantitatif yang dapat dihitung.`,
     highlights: [],
     statistics: {}
   };
@@ -53,12 +66,21 @@ function emptyInsight() {
  */
 export function generateInsights(preprocessingResult, filters = {}) {
   const structure = preprocessingResult?.datasetStructure;
-  if (!structure?.primaryValueColumn) return emptyInsight();
+  if (!structure?.primaryValueColumn) return emptyInsight(preprocessingResult);
 
   const rows = filterRows(preprocessingResult.cleanedData || [], filters);
+  if (!rows.length) {
+    const period = filters.year ? `tahun ${filters.year}` : "filter yang dipilih";
+    return {
+      title: "Data Tidak Tersedia",
+      summary: `Tidak ada observasi untuk ${period}. Insight tidak dibuat dari data periode lain.`,
+      highlights: [],
+      statistics: {}
+    };
+  }
   const valueColumn = structure.primaryValueColumn;
   const values = rows.map(row => numericValue(row[valueColumn])).filter(value => value !== null);
-  if (!values.length) return emptyInsight();
+  if (!values.length) return emptyInsight(preprocessingResult);
 
   const labelColumn = structure.hasKabupaten
     ? "kabupaten"
@@ -71,6 +93,28 @@ export function generateInsights(preprocessingResult, filters = {}) {
   const trend = structure.hasTahun ? createTrendChange(rows, valueColumn) : null;
   const categoryCount = labelColumn ? new Set(rows.map(row => row[labelColumn]).filter(Boolean)).size : 0;
   const highlights = [];
+
+  if (values.length === 1) {
+    const row = rows.find(item => numericValue(item[valueColumn]) !== null) || {};
+    const location = row.kabupaten || row.provinsi || "Provinsi Aceh";
+    const period = row.tahun ? ` pada tahun ${row.tahun}` : "";
+    const valueLabel = valueColumn.replace(/_/g, " ");
+    return {
+      title: "Ringkasan Data",
+      summary: `Berdasarkan dataset ini, ${valueLabel} ${location}${period} tercatat sebesar ${formatValue(values[0])}. Karena dataset merupakan ringkasan satu observasi, analisis perbandingan antarwilayah atau antarperiode belum dapat dilakukan.`,
+      highlights: [`Nilai yang tersedia: ${formatValue(values[0])}${row.satuan ? ` ${row.satuan}` : ""}.`],
+      statistics: {
+        total: values[0],
+        average: values[0],
+        largest: { label: location, value: values[0] },
+        smallest: { label: location, value: values[0] },
+        ranking: [{ label: location, value: values[0] }],
+        categoryCount: 1,
+        dataCount: 1,
+        trend: null
+      }
+    };
+  }
 
   if (largest) highlights.push(`Nilai terbesar: ${largest.label} (${formatValue(largest.value)}).`);
   if (smallest && smallest.label !== largest?.label) highlights.push(`Nilai terkecil: ${smallest.label} (${formatValue(smallest.value)}).`);

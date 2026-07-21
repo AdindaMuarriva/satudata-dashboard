@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { BarChart3, Database, Lightbulb, Map, PieChart, Sparkles, TrendingUp } from "lucide-react";
+import { BarChart3, ChartNoAxesColumnIncreasing, Database, PieChart, Sparkles, TrendingUp } from "lucide-react";
 import VisualizationRenderer from "./VisualizationRenderer";
 import { generateInsights } from "../../analysis/insightGenerator";
 
@@ -9,13 +9,13 @@ const STAGES = [
   { key: "visualization", label: "Visualisasi", text: "Rekomendasi grafik ditentukan dari struktur data.", icon: BarChart3 }
 ];
 
-const VISUALIZATION_ICONS = { "Bar Chart": BarChart3, "Line Chart": TrendingUp, "Pie Chart": PieChart, "Choropleth Map": Map, "KPI Card": BarChart3 };
+const VISUALIZATION_ICONS = { "Bar Chart": BarChart3, "Line Chart": TrendingUp, "Pie Chart": PieChart, "Donut Chart": PieChart, Histogram: ChartNoAxesColumnIncreasing };
 
 function statusLabel(status) {
   return { loading: "Memuat", success: "Selesai", fallback: "Data contoh", error: "Gagal", idle: "Menunggu" }[status] || "Menunggu";
 }
 
-export default function AnalysisPlaceholder({ filters, selectedDataset, matchResult, preprocessingResult, pipelineStatus, pipelineError, pipelineNotice }) {
+export default function AnalysisPlaceholder({ filters, selectedDataset, relatedDatasets = [], analysisDatasets = [], matchResult, preprocessingResult, pipelineStatus, pipelineError, pipelineNotice }) {
   const VisualizationIcon = VISUALIZATION_ICONS[filters.visualization] || BarChart3;
   const insight = useMemo(() => generateInsights(preprocessingResult, filters), [preprocessingResult, filters]);
   return (
@@ -35,7 +35,7 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
       <section className="analysis-placeholder-panel">
         <div className="placeholder-panel-heading"><VisualizationIcon size={23} aria-hidden="true" /><div><h2>Visualisasi Analisis</h2><p>Placeholder {filters.visualization} untuk {filters.region} pada tahun {filters.year}.</p></div></div>
         <div className="analysis-selection-summary" aria-live="polite"><span>{filters.year}</span><span>{filters.region}</span><span>{filters.commodity}</span><span>{filters.visualization}</span></div>
-        {preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} /> : <div className="analysis-chart-skeleton" aria-label={`Placeholder ${filters.visualization}`}></div>}
+        {analysisDatasets.length ? <div className="analysis-dataset-visualizations">{analysisDatasets.map((item, index) => <article className="analysis-dataset-visualization" key={item.dataset.uuid || item.dataset.id || index}><h3>{item.dataset.title || item.dataset.judul || "Tanpa judul"}</h3>{item.preprocessingResult ? <VisualizationRenderer preprocessingResult={item.preprocessingResult} filters={filters} /> : <p className="visualization-unavailable">{item.error || "Dataset tidak dapat divisualisasikan."}</p>}</article>)}</div> : preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} /> : <div className="analysis-chart-skeleton" aria-label={`Placeholder ${filters.visualization}`}></div>}
       </section>
 
       <section className="analysis-detail-grid">
@@ -46,13 +46,8 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
         </article>
         <article className="analysis-placeholder-panel">
           <div className="placeholder-panel-heading"><Database size={23} aria-hidden="true" /><div><h2>Metadata Dataset</h2><p>Dataset sumber untuk periode {filters.year}, OPD, satuan, dan langkah pengolahan akan dicantumkan di sini.</p></div></div>
-          {selectedDataset ? <dl className="dataset-debug-metadata"><div><dt>Dataset</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>{selectedDataset.isDummy ? "Dataset contoh" : "Portal Satu Data Aceh"}</dd></div></dl> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
+          {selectedDataset ? <><dl className="dataset-debug-metadata"><div><dt>Dataset sumber visualisasi</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>{selectedDataset.isDummy ? "Dataset contoh" : "Portal Satu Data Aceh"}</dd></div></dl><div className="related-dataset-list"><strong>{relatedDatasets.length} dataset terkait ditemukan</strong><p>Daftar ini menunjukkan dataset yang relevan dengan pertanyaan. Visualisasi memakai dataset sumber di atas agar metrik dan satuan tetap konsisten.</p><ul>{relatedDatasets.map(dataset => <li key={dataset.uuid || dataset.id || dataset.title || dataset.judul}>{dataset.title || dataset.judul || "Tanpa judul"}</li>)}</ul></div></> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
         </article>
-      </section>
-
-      <section className="analysis-placeholder-panel analysis-debug-panel">
-        <div className="placeholder-panel-heading"><Sparkles size={23} aria-hidden="true" /><div><h2>Debug: Hasil Preprocessing</h2><p>Output pipeline ditampilkan sebagai JSON sementara untuk verifikasi integrasi.</p></div></div>
-        {preprocessingResult ? <pre>{JSON.stringify(preprocessingResult, null, 2)}</pre> : <p className="analysis-debug-empty">{pipelineStatus.preprocessing === "loading" ? "Menjalankan preprocessing..." : "Hasil preprocessing belum tersedia."}</p>}
       </section>
     </>
   );

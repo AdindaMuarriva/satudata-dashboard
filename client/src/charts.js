@@ -301,7 +301,7 @@ export function renderMultiTrendChart(container, series, tooltipEl, options = {}
     .text(`${series.length} dataset dicakup; ${visibleSeries.length} memiliki data tren. Arahkan kursor ke titik untuk detailnya.`);
 }
 
-export function renderDonutChart(container, data, tooltipEl) {
+export function renderDonutChart(container, data, tooltipEl, { donut = true, unit = "" } = {}) {
   d3.select(container).selectAll("*").remove();
   const width = container.clientWidth || 420;
   const height = 370;
@@ -309,13 +309,15 @@ export function renderDonutChart(container, data, tooltipEl) {
   const colors = ["#d92419", "#1f6feb", "#0f8a63", "#9a5bd1", "#d97706", "#de5e40"];
   const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
   const pie = d3.pie().sort(null).value(d => d.value)(data);
-  const arc = d3.arc().innerRadius(radius * .58).outerRadius(radius);
+  const arc = d3.arc().innerRadius(donut ? radius * .58 : 0).outerRadius(radius);
   const color = d3.scaleOrdinal(colors).domain(data.map(d => d.label));
   const center = svg.append("g").attr("transform", `translate(${width * .31},${height / 2})`);
   center.selectAll("path").data(pie).join("path").attr("d", arc).attr("fill", d => color(d.data.label)).attr("stroke", "#fff").attr("stroke-width", 3)
-    .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${d.data.label}</b><br>${d.data.value} dataset`, event)).on("mouseleave", () => hideTip(tooltipEl));
-  center.append("text").attr("text-anchor", "middle").attr("y", -6).attr("fill", "#4f4544").attr("font-size", 14).attr("font-weight", 700).text("Total dataset");
-  center.append("text").attr("text-anchor", "middle").attr("y", 22).attr("fill", "#8b1e21").attr("font-size", 30).attr("font-weight", 800).text(d3.sum(data, d => d.value));
+    .on("mousemove", (event, d) => showTip(tooltipEl, `<b>${d.data.label}</b><br>${d.data.value}${unit ? ` ${unit}` : ""}`, event)).on("mouseleave", () => hideTip(tooltipEl));
+  if (donut) {
+    center.append("text").attr("text-anchor", "middle").attr("y", -6).attr("fill", "#4f4544").attr("font-size", 14).attr("font-weight", 700).text("Total nilai");
+    center.append("text").attr("text-anchor", "middle").attr("y", 22).attr("fill", "#8b1e21").attr("font-size", 30).attr("font-weight", 800).text(d3.sum(data, d => d.value));
+  }
   const legend = svg.append("g").attr("transform", `translate(${width * .62},42)`);
   data.forEach((item, index) => {
     const row = legend.append("g").attr("transform", `translate(0,${index * 48})`);

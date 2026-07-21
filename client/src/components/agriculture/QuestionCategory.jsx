@@ -1,6 +1,6 @@
 import QuestionCard from "./QuestionCard";
 
-export default function QuestionCategory({ category, questions, onSelect }) {
+export default function QuestionCategory({ category, questions, onSelect, datasetsByQuestion = {} }) {
   return (
     <section className="question-category" aria-labelledby={`category-${category.id}`}>
       <div className="question-category-head">
@@ -9,7 +9,7 @@ export default function QuestionCategory({ category, questions, onSelect }) {
         <p>{category.description}</p>
       </div>
       <div className="question-card-grid">
-        {questions.map(question => <QuestionCard key={question.id} question={question} category={category} onSelect={onSelect} />)}
+        {questions.map(question => <QuestionCard key={question.id} question={question} category={category} onSelect={onSelect} datasets={datasetsByQuestion[question.id] || []} />)}
       </div>
     </section>
   );

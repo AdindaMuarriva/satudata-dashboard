@@ -31,6 +31,7 @@ export function preprocessDataset(rawData = []) {
 
   // Adaptasi: pastikan input adalah array of object
   const inputRows = toRowArray(rawData);
+  console.log("[Preprocessing] Jumlah data sebelum preprocessing:", inputRows.length);
   if (inputRows.length === 0) {
     console.warn("[Preprocessing] Input kosong atau tidak dapat dikonversi ke array.");
   }
@@ -64,6 +65,7 @@ export function preprocessDataset(rawData = []) {
       emptyRowsRemoved: cleaned.metadata.emptyRowsRemoved,
       duplicatesRemoved: cleaned.metadata.duplicatesRemoved
     });
+    console.log("[Preprocessing] Jumlah data setelah preprocessing:", cleaned.data.length);
   } catch (error) {
     console.error("[Preprocessing] cleanData() GAGAL:", error.message, "| Input:", normalized.data.slice(0, 2));
     throw new Error(`cleanData gagal: ${error.message}`);

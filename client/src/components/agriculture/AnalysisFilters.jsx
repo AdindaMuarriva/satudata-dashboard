@@ -1,10 +1,17 @@
 import { Filter, RotateCcw } from "lucide-react";
 
+const FIRST_DATA_YEAR = 2020;
+
+function availableYears() {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: Math.max(currentYear - FIRST_DATA_YEAR + 1, 1) }, (_, index) => String(currentYear - index));
+}
+
 const FILTERS = [
-  { key: "year", label: "Tahun", options: ["2024", "2023", "2022", "2021", "2020"] },
+  { key: "year", label: "Tahun", options: availableYears() },
   { key: "region", label: "Kabupaten/Kota", options: ["Seluruh Aceh", "Aceh Besar", "Aceh Utara", "Pidie", "Aceh Timur"] },
   { key: "commodity", label: "Komoditas", options: ["Semua komoditas", "Padi", "Jagung", "Kedelai", "Cabai"] },
-  { key: "visualization", label: "Jenis Visualisasi", options: ["Bar Chart", "Line Chart", "Pie Chart", "Choropleth Map", "KPI Card"] }
+  { key: "visualization", label: "Jenis Visualisasi", options: ["Bar Chart", "Line Chart", "Pie Chart", "Donut Chart", "Histogram", "Peta Aceh"] }
 ];
 
 export default function AnalysisFilters({ filters, onChange, onReset }) {

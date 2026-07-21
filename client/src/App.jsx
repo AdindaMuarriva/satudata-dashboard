@@ -75,6 +75,8 @@ export default function App() {
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="infrastruktur" />
   ) : page === "dashboard-pertanian" ? (
     <AgricultureDashboardPage />
+  ) : page === "dashboard-pertanian-pertanyaan" ? (
+    <AgricultureDashboardPage showQuestions />
   ) : page === "dashboard-sosial" ? (
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="sosial" />
   ) : page === "dashboard-statistik" ? (
