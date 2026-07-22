@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import AnalysisPlaceholder from "./AnalysisPlaceholder";
 import AnalysisFilters from "./AnalysisFilters";
@@ -33,6 +33,22 @@ function createDummyDataset(question) {
   };
 }
 
+function normalizeYears(years = []) {
+  return [...new Set(years
+    .map(item => item?.year ?? item)
+    .map(value => String(value ?? "").match(/\b(19|20)\d{2}\b/)?.[0])
+    .filter(Boolean))]
+    .sort((left, right) => Number(right) - Number(left));
+}
+
+function yearsFromRows(rows = []) {
+  return normalizeYears((Array.isArray(rows) ? rows : []).flatMap(row => (
+    Object.entries(row || {})
+      .filter(([column]) => /(^|[_\s-])(tahun|year|periode)([_\s-]|$)/i.test(column))
+      .map(([, value]) => value)
+  )));
+}
+
 export default function QuestionDetail({ question, onBack, analysisLabel = "ANALISIS PERTANIAN" }) {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [selectedDataset, setSelectedDataset] = useState(null);
@@ -41,12 +57,19 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
   const [pipelineStatus, setPipelineStatus] = useState({ dataset: "idle", preprocessing: "idle", visualization: "idle" });
   const [pipelineError, setPipelineError] = useState("");
   const [pipelineNotice, setPipelineNotice] = useState("");
+  const [availableYears, setAvailableYears] = useState([]);
+  const resolvedQuestionRef = useRef(null);
   const handleFilterChange = (key, value) => setFilters(current => ({ ...current, [key]: value }));
 
   useEffect(() => {
     let active = true;
 
     async function runPipeline() {
+      const isInitialYearSelection = resolvedQuestionRef.current !== question.id;
+      if (isInitialYearSelection) {
+        resolvedQuestionRef.current = question.id;
+        setAvailableYears([]);
+      }
       setSelectedDataset(null);
       setMatchResult(null);
       setPreprocessingResult(null);
@@ -123,15 +146,28 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
 
           const fetchResult = await fetchDatasetValues(datasetId, filters.year);
           rawData = fetchResult.rows;
+          const metadataYears = normalizeYears(fetchResult.years);
+          if (metadataYears.length) setAvailableYears(metadataYears);
+
+          // Gunakan tahun terbaru yang benar-benar tercatat pada dataset,
+          // bukan tahun kalender. Pengguna masih bisa memilih tahun lama
+          // setelah tampilan awal selesai dimuat.
+          if (isInitialYearSelection && metadataYears[0] && metadataYears[0] !== filters.year) {
+            if (!active) return;
+            setPipelineNotice(`Menampilkan data terbaru yang tersedia: tahun ${metadataYears[0]}.`);
+            setFilters(current => current.year === filters.year ? { ...current, year: metadataYears[0] } : current);
+            return;
+          }
 
           // Jika kosong untuk tahun dipilih, coba tahun tersedia dari metadata
           if (!rawData || rawData.length === 0) {
-            const availableYears = fetchResult.years || [];
-            console.warn("[Pipeline] Data kosong untuk tahun", filters.year, "| Tersedia:", availableYears);
+            const knownYears = metadataYears;
+            console.warn("[Pipeline] Data kosong untuk tahun", filters.year, "| Tersedia:", knownYears);
 
-            if (availableYears.length > 0) {
-              // Ambil tahun pertama yang tersedia
-              const fallbackYear = String(availableYears[0]);
+            if (knownYears.length > 0) {
+              // normalizeYears mengurutkan secara menurun: indeks pertama
+              // selalu tahun terbaru yang tersedia.
+              const fallbackYear = knownYears[0];
               console.log("[Pipeline] Mencoba fallback ke tahun", fallbackYear);
               const retryResult = await fetchDatasetValues(datasetId, fallbackYear);
               rawData = retryResult.rows;
@@ -146,14 +182,16 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
               console.log("[Pipeline] Mencoba fetch tanpa filter tahun...");
               const noYearResult = await fetchDatasetValues(datasetId, "");
               rawData = noYearResult.rows;
+              const rowYears = yearsFromRows(rawData);
+              if (rowYears.length) setAvailableYears(rowYears);
               if (rawData && rawData.length > 0) {
                 console.log("[Pipeline] Berhasil mengambil data tanpa filter tahun:", rawData.length, "baris");
               }
             }
 
             if (!rawData || rawData.length === 0) {
-              const yearsLabel = availableYears.length
-                ? `(tahun tersedia di API: ${availableYears.join(", ")})`
+              const yearsLabel = knownYears.length
+                ? `(tahun tersedia di API: ${knownYears.join(", ")})`
                 : "(tidak ada tahun yang tersedia di metadata)";
               throw new Error(`Dataset berhasil ditemukan tetapi tidak ada data untuk tahun ${filters.year} ${yearsLabel}`);
             }
@@ -162,10 +200,20 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
           console.log("[Pipeline] 6. Datasource mengembalikan", rawData.length, "baris data.");
         }
 
+        const rowYears = yearsFromRows(rawData);
+        if (rowYears.length) setAvailableYears(current => normalizeYears([...current, ...rowYears]));
+        const latestDataYear = rowYears[0];
+        if (isInitialYearSelection && latestDataYear && latestDataYear !== filters.year) {
+          if (!active) return;
+          setPipelineNotice(`Menampilkan data terbaru yang tersedia: tahun ${latestDataYear}.`);
+          setFilters(current => current.year === filters.year ? { ...current, year: latestDataYear } : current);
+          return;
+        }
+
         // Sinkronkan filter dengan tahun fallback. Tanpa ini preprocessing
         // berhasil, tetapi renderer kembali menyaring semua baris memakai
         // tahun awal yang tidak tersedia.
-        if (!dataset.isDummy && resolvedYear && resolvedYear !== filters.year) {
+        if (resolvedYear && resolvedYear !== filters.year) {
           if (!active) return;
           setPipelineNotice(`Data untuk tahun ${filters.year} tidak tersedia. Menampilkan tahun ${resolvedYear}.`);
           setFilters(current => current.year === filters.year ? { ...current, year: resolvedYear } : current);
@@ -199,7 +247,7 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
         <h1>{question.title}</h1>
         <p>Halaman ini menyiapkan alur analisis berbasis pertanyaan. Dataset, preprocessing, visualisasi, insight, dan metadata akan dihubungkan pada tahap berikutnya.</p>
       </section>
-      <AnalysisFilters filters={filters} onChange={handleFilterChange} onReset={() => setFilters(DEFAULT_FILTERS)} />
+      <AnalysisFilters filters={filters} availableYears={availableYears} onChange={handleFilterChange} onReset={() => setFilters(current => ({ ...DEFAULT_FILTERS, year: availableYears[0] || current.year }))} />
       <AnalysisPlaceholder
         filters={filters}
         selectedDataset={selectedDataset}

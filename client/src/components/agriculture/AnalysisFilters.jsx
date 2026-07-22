@@ -14,7 +14,13 @@ const FILTERS = [
   { key: "visualization", label: "Jenis Visualisasi", options: ["Bar Chart", "Line Chart", "Pie Chart", "Donut Chart", "Histogram", "Peta Aceh"] }
 ];
 
-export default function AnalysisFilters({ filters, onChange, onReset }) {
+export default function AnalysisFilters({ filters, onChange, onReset, availableYears = [] }) {
+  const filtersWithDataYears = FILTERS.map(filter => (
+    filter.key === "year" && availableYears.length
+      ? { ...filter, options: availableYears }
+      : filter
+  ));
+
   return (
     <section className="analysis-filter-panel" aria-labelledby="analysis-filter-title">
       <div className="analysis-filter-heading">
@@ -22,7 +28,7 @@ export default function AnalysisFilters({ filters, onChange, onReset }) {
         <button type="button" onClick={onReset}><RotateCcw size={15} aria-hidden="true" /> Atur ulang</button>
       </div>
       <div className="analysis-filter-grid">
-        {FILTERS.map(filter => (
+        {filtersWithDataYears.map(filter => (
           <label key={filter.key}>
             <span>{filter.label}</span>
             <select value={filters[filter.key]} onChange={event => onChange(filter.key, event.target.value)}>
@@ -31,7 +37,7 @@ export default function AnalysisFilters({ filters, onChange, onReset }) {
           </label>
         ))}
       </div>
-      <p className="analysis-filter-note">Filter ini masih menggunakan data contoh untuk membentuk pengalaman interaksi. Nilai aktual akan tersedia ketika mesin analisis dihubungkan.</p>
+      <p className="analysis-filter-note">Tahun yang tersedia diambil dari dataset terpilih. Tahun paling baru yang memiliki data dipilih otomatis saat analisis dibuka.</p>
     </section>
   );
 }
