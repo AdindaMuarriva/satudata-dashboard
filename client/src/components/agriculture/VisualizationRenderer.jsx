@@ -33,7 +33,7 @@ export default function VisualizationRenderer({ preprocessingResult, filters }) 
       <div className={mapModel.status === "ready" && mapModel.type === "map" ? "visualization-content-grid" : ""} style={mapModel.status === "ready" && mapModel.type === "map" ? { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, .85fr)", gap: "16px", alignItems: "start" } : undefined}>
         <div>
           {model.type === "bar" || model.type === "pie" || model.type === "donut" ? <div ref={containerRef} className="visualization-canvas"></div> : null}
-          {model.type === "line" ? <svg ref={trendRef} className="visualization-trend" width="100%" height="280"></svg> : null}
+          {model.type === "line" ? <svg ref={trendRef} className="visualization-trend" width="100%" height="300"></svg> : null}
           {model.type === "histogram" ? <div className="visualization-histogram">{model.data.map(bin => <div key={bin.label}><span style={{ height: `${Math.max(bin.value * 28, 8)}px` }}></span><small>{bin.label}</small></div>)}</div> : null}
         </div>
         {mapModel.status === "ready" && mapModel.type === "map" ? <aside className="visualization-map-panel" style={{ padding: "14px", border: "1px solid #e5e7eb", borderRadius: "12px", background: "#fffafa" }}><div style={{ display: "flex", alignItems: "center", gap: "7px", color: "#8e1414" }}><Map size={17} aria-hidden="true" /><strong>Peta Aceh</strong>{mapModel.unit ? <small>Satuan: {mapModel.unit}</small> : null}</div><div ref={mapRef} className="visualization-map-canvas"></div></aside> : null}

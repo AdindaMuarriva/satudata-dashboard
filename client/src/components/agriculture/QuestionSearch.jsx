@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 
-export default function QuestionSearch({ value, onChange }) {
+export default function QuestionSearch({ value, onChange, placeholder = "Cari pertanyaan analisis..." }) {
   return (
     <label className="agriculture-question-search">
       <Search size={20} aria-hidden="true" />
@@ -8,8 +8,8 @@ export default function QuestionSearch({ value, onChange }) {
         type="search"
         value={value}
         onChange={event => onChange(event.target.value)}
-        placeholder="Cari pertanyaan analisis, misalnya produksi padi..."
-        aria-label="Cari pertanyaan analisis pertanian"
+        placeholder={placeholder}
+        aria-label="Cari pertanyaan analisis"
       />
     </label>
   );

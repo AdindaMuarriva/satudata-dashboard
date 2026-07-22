@@ -7,20 +7,26 @@ function cleanString(value) {
 }
 
 function parseNumericString(value) {
+  // Nilai dari portal tidak selalu berupa angka murni: cukup sering satuan
+  // ditempelkan ke nilainya (contoh: "1.250,5 km" atau "76,2%"). Simpan
+  // teks yang benar-benar kategorikal, tetapi ambil angka ketika sisanya
+  // hanya satuan umum/pemisah.
   const compact = value.replace(/\s/g, "").replace(/%$/, "");
-  if (!/^-?[\d.,]+$/.test(compact)) return value;
+  const numericWithUnit = compact.match(/^(-?[\d.,]+)(?:[a-zA-Z]+(?:\^?\d+)?)?$/u);
+  const numericPart = numericWithUnit ? numericWithUnit[1] : compact;
+  if (!/^-?[\d.,]+$/.test(numericPart)) return value;
 
-  let normalized = compact;
-  if (compact.includes(",") && compact.includes(".")) {
-    normalized = compact.lastIndexOf(",") > compact.lastIndexOf(".")
-      ? compact.replace(/\./g, "").replace(",", ".")
-      : compact.replace(/,/g, "");
-  } else if (compact.includes(",")) {
-    normalized = /^-?\d{1,3}(,\d{3})+$/.test(compact)
-      ? compact.replace(/,/g, "")
-      : compact.replace(",", ".");
-  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(compact)) {
-    normalized = compact.replace(/\./g, "");
+  let normalized = numericPart;
+  if (numericPart.includes(",") && numericPart.includes(".")) {
+    normalized = numericPart.lastIndexOf(",") > numericPart.lastIndexOf(".")
+      ? numericPart.replace(/\./g, "").replace(",", ".")
+      : numericPart.replace(/,/g, "");
+  } else if (numericPart.includes(",")) {
+    normalized = /^-?\d{1,3}(,\d{3})+$/.test(numericPart)
+      ? numericPart.replace(/,/g, "")
+      : numericPart.replace(",", ".");
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(numericPart)) {
+    normalized = numericPart.replace(/\./g, "");
   }
 
   const number = Number(normalized);

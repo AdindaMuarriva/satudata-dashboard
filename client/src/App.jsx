@@ -9,6 +9,8 @@ import SearchResultsPage from "./SearchResultsPage";
 import ComparePage from "./ComparePage";
 import MasyarakatDashboardPage from "./MasyarakatDashboardPage";
 import AgricultureDashboardPage from "./AgricultureDashboardPage";
+import SocialDashboardPage from "./SocialDashboardPage";
+import InfrastructureDashboardPage from "./InfrastructureDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
 
@@ -72,13 +74,13 @@ export default function App() {
   ) : page === "dashboard-pendidikan" ? (
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="pendidikan" />
   ) : page === "dashboard-infrastruktur" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="infrastruktur" />
+    <InfrastructureDashboardPage />
   ) : page === "dashboard-pertanian" ? (
     <AgricultureDashboardPage />
   ) : page === "dashboard-pertanian-pertanyaan" ? (
-    <AgricultureDashboardPage showQuestions />
+    <AgricultureDashboardPage />
   ) : page === "dashboard-sosial" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="sosial" />
+    <SocialDashboardPage />
   ) : page === "dashboard-statistik" ? (
     <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="statistik" />
   ) : page === "dashboard-lingkungan" ? (

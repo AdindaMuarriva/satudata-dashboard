@@ -33,11 +33,9 @@ function createDummyDataset(question) {
   };
 }
 
-export default function QuestionDetail({ question, onBack }) {
+export default function QuestionDetail({ question, onBack, analysisLabel = "ANALISIS PERTANIAN" }) {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [selectedDataset, setSelectedDataset] = useState(null);
-  const [relatedDatasets, setRelatedDatasets] = useState([]);
-  const [analysisDatasets, setAnalysisDatasets] = useState([]);
   const [matchResult, setMatchResult] = useState(null);
   const [preprocessingResult, setPreprocessingResult] = useState(null);
   const [pipelineStatus, setPipelineStatus] = useState({ dataset: "idle", preprocessing: "idle", visualization: "idle" });
@@ -50,8 +48,6 @@ export default function QuestionDetail({ question, onBack }) {
 
     async function runPipeline() {
       setSelectedDataset(null);
-      setRelatedDatasets([]);
-      setAnalysisDatasets([]);
       setMatchResult(null);
       setPreprocessingResult(null);
       setPipelineError("");
@@ -63,7 +59,6 @@ export default function QuestionDetail({ question, onBack }) {
 
       let dataset;
       let result;
-      let datasetsForAnalysis = [];
       try {
         const { rows } = await fetchDatasetsMultiPage();
 
@@ -72,27 +67,23 @@ export default function QuestionDetail({ question, onBack }) {
 
         if (!rows.length) throw new Error("Daftar dataset dari API tidak tersedia");
 
-        // [LOG] Tahap 3: Hasil rankDatasets
-        const { rankDatasets } = await import("../../analysis/datasetMatcher");
-        const ranked = rankDatasets(question, rows);
-        console.log("[Pipeline] 3. Hasil rankDatasets (5 teratas):", ranked.slice(0, 5).map(r => ({ judul: r.dataset?.judul, score: r.score })));
-        const related = ranked.filter(candidate => candidate.score >= 15).map(candidate => candidate.dataset);
-        setRelatedDatasets(related);
-        datasetsForAnalysis = related;
-
-        // [LOG] Tahap 4: Hasil matchDataset
-        result = matchDataset(question, rows);
-        console.log("[Pipeline] 4. Hasil matchDataset:", { status: result.status, score: result.score, message: result.message });
+        // Dataset yang berasal dari katalog portal sudah menyimpan UUID sumbernya.
+        // Ini memastikan satu pertanyaan selalu membuka visualisasi dataset tersebut.
+        const directDataset = question.datasetUuid
+          ? rows.find(candidate => candidate.uuid === question.datasetUuid)
+          : null;
+        result = directDataset
+          ? { status: "matched", dataset: directDataset, score: 100, message: "Dataset sumber pertanyaan ditemukan" }
+          : matchDataset(question, rows);
+        console.log("[Pipeline] 3. Hasil matchDataset:", { status: result.status, score: result.score, message: result.message });
 
         if (result.status === "no_match") {
           // [FIX] Jangan langsung error — gunakan fallback dummy dataset
           console.warn("[Pipeline] matchDataset no_match (skor terlalu rendah). Menggunakan fallback dataset contoh.");
           dataset = createDummyDataset(question);
           result = matchDataset(question, [dataset]);
-          setRelatedDatasets([dataset]);
-          datasetsForAnalysis = [dataset];
           if (!active) return;
-          setPipelineNotice(`Tidak ada dataset yang cukup relevan di portal (skor tertinggi: ${ranked[0]?.score ?? 0}%). Dataset contoh digunakan untuk menguji alur analisis.`);
+          setPipelineNotice("Tidak ada dataset yang cukup relevan di portal. Dataset contoh digunakan untuk menguji alur analisis.");
         } else {
           dataset = result.dataset;
         }
@@ -101,8 +92,6 @@ export default function QuestionDetail({ question, onBack }) {
         console.warn("[Pipeline] Fetch API gagal:", error.message, "→ menggunakan fallback dataset contoh.");
         dataset = createDummyDataset(question);
         result = matchDataset(question, [dataset]);
-        setRelatedDatasets([dataset]);
-        datasetsForAnalysis = [dataset];
         if (!active) return;
         setPipelineNotice(`API tidak tersedia. Dataset contoh digunakan untuk menguji alur analisis. (${error.message})`);
       }
@@ -117,6 +106,7 @@ export default function QuestionDetail({ question, onBack }) {
 
       try {
         let rawData;
+        let resolvedYear = filters.year;
         if (dataset.isDummy) {
           rawData = dataset.data;
           console.log("[Pipeline] 6. Menggunakan data dummy (isDummy=true).");
@@ -146,6 +136,7 @@ export default function QuestionDetail({ question, onBack }) {
               const retryResult = await fetchDatasetValues(datasetId, fallbackYear);
               rawData = retryResult.rows;
               if (rawData && rawData.length > 0) {
+                resolvedYear = fallbackYear;
                 console.log("[Pipeline] Berhasil mengambil data untuk tahun fallback", fallbackYear, ":", rawData.length, "baris");
               }
             }
@@ -171,28 +162,22 @@ export default function QuestionDetail({ question, onBack }) {
           console.log("[Pipeline] 6. Datasource mengembalikan", rawData.length, "baris data.");
         }
 
+        // Sinkronkan filter dengan tahun fallback. Tanpa ini preprocessing
+        // berhasil, tetapi renderer kembali menyaring semua baris memakai
+        // tahun awal yang tidak tersedia.
+        if (!dataset.isDummy && resolvedYear && resolvedYear !== filters.year) {
+          if (!active) return;
+          setPipelineNotice(`Data untuk tahun ${filters.year} tidak tersedia. Menampilkan tahun ${resolvedYear}.`);
+          setFilters(current => current.year === filters.year ? { ...current, year: resolvedYear } : current);
+          return;
+        }
+
         // [LOG] Tahap 7: Hasil preprocessDataset
         const processed = preprocessDataset(rawData);
         console.log("[Pipeline] 7. Hasil preprocessDataset:", { cleanedRows: processed.cleanedData?.length, datasetStructure: processed.datasetStructure, datasetLevel: processed.datasetLevel });
 
         if (!active) return;
         setPreprocessingResult(processed);
-        const processedDatasets = await Promise.all(datasetsForAnalysis.map(async candidate => {
-          const candidateId = candidate.uuid || candidate.id;
-          const isSelected = candidateId && candidateId === (dataset.uuid || dataset.id);
-          if (isSelected) return { dataset: candidate, preprocessingResult: processed };
-          try {
-            if (!candidateId) throw new Error("Dataset tidak memiliki ID yang valid");
-            const values = candidate.isDummy ? candidate.data : (await fetchDatasetValues(candidateId, filters.year)).rows;
-            if (!values?.length) throw new Error(`Tidak ada data untuk tahun ${filters.year}`);
-            return { dataset: candidate, preprocessingResult: preprocessDataset(values) };
-          } catch (error) {
-            console.warn("[Pipeline] Dataset terkait tidak dapat divisualisasikan:", candidate.title || candidate.judul, error.message);
-            return { dataset: candidate, error: error.message };
-          }
-        }));
-        if (!active) return;
-        setAnalysisDatasets(processedDatasets.length ? processedDatasets : [{ dataset, preprocessingResult: processed }]);
         setPipelineStatus({ dataset: dataset.isDummy ? "fallback" : "success", preprocessing: "success", visualization: "success" });
       } catch (error) {
         console.error("[Pipeline] Error tahap preprocessing/datasource:", error.message);
@@ -210,7 +195,7 @@ export default function QuestionDetail({ question, onBack }) {
     <main className="agriculture-dashboard-page">
       <button type="button" className="analysis-back-button" onClick={onBack}><ArrowLeft size={18} aria-hidden="true" /> Kembali ke Daftar Pertanyaan</button>
       <section className="agriculture-detail-hero">
-        <span>ANALISIS PERTANIAN</span>
+        <span>{analysisLabel}</span>
         <h1>{question.title}</h1>
         <p>Halaman ini menyiapkan alur analisis berbasis pertanyaan. Dataset, preprocessing, visualisasi, insight, dan metadata akan dihubungkan pada tahap berikutnya.</p>
       </section>
@@ -218,8 +203,6 @@ export default function QuestionDetail({ question, onBack }) {
       <AnalysisPlaceholder
         filters={filters}
         selectedDataset={selectedDataset}
-        relatedDatasets={relatedDatasets}
-        analysisDatasets={analysisDatasets}
         matchResult={matchResult}
         preprocessingResult={preprocessingResult}
         pipelineStatus={pipelineStatus}

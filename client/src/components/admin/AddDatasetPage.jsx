@@ -10,7 +10,7 @@ export default function AddDatasetPage({ onBack, onSaved, mode = "dataset" }) {
   const [file, setFile] = useState(null);
   const [csvRows, setCsvRows] = useState([]);
   const [message, setMessage] = useState("");
-  const [form, setForm] = useState({ judul: "", bidang: "Masyarakat", organisasi: "", tahun: new Date().getFullYear(), deskripsi: "", satuan: "" });
+  const [form, setForm] = useState({ judul: "", bidang: "Masyarakat", organisasi: "", tahun: new Date().getFullYear(), deskripsi: "", satuan: "", dashboardQuestion: "", dashboardQuestionDescription: "" });
   const isCsvImport = mode === "csv";
 
   useEffect(() => {
@@ -52,6 +52,8 @@ export default function AddDatasetPage({ onBack, onSaved, mode = "dataset" }) {
       dimensi: String(form.tahun),
       deskripsi: isCsvImport ? `Data diimpor dari ${file.name}` : form.deskripsi.trim(),
       satuan: form.satuan.trim() || "Belum dicantumkan",
+      dashboardQuestion: form.dashboardQuestion.trim(),
+      dashboardQuestionDescription: form.dashboardQuestionDescription.trim(),
       csvFileName: file.name,
       csvRows,
       created_at: new Date().toISOString(),
@@ -78,6 +80,8 @@ export default function AddDatasetPage({ onBack, onSaved, mode = "dataset" }) {
             <label>Tahun Data<input required name="tahun" type="number" min="2000" max="2100" value={form.tahun} onChange={updateField} /></label>
             <label>Satuan (opsional)<input name="satuan" value={form.satuan} onChange={updateField} placeholder="Orang, persen, unit, ..." /></label>
             <label className="form-wide">Deskripsi (opsional)<textarea name="deskripsi" value={form.deskripsi} onChange={updateField} placeholder="Jelaskan cakupan dan sumber data singkat." rows="4" /></label>
+            <label className="form-wide">Pertanyaan di dashboard (opsional)<input name="dashboardQuestion" value={form.dashboardQuestion} onChange={updateField} placeholder="Contoh: Kabupaten mana yang memiliki produksi padi tertinggi?" /><small>Jika diisi, pertanyaan ini otomatis tampil pada dashboard kategori dataset dan langsung membuka dataset ini.</small></label>
+            <label className="form-wide">Deskripsi pertanyaan (opsional)<textarea name="dashboardQuestionDescription" value={form.dashboardQuestionDescription} onChange={updateField} placeholder="Contoh: Membandingkan produksi padi antar kabupaten/kota." rows="3" /></label>
           </div>
         )}
         <label className="csv-dropzone"><input required type="file" accept={DATA_FILE_ACCEPT} onChange={handleFile} /><FileSpreadsheet size={30} /><strong>{file ? file.name : "Unggah file data"}</strong><span>{file ? `${csvRows.length} baris data terdeteksi` : "Mendukung CSV, Excel, JSON, TXT, dan TSV."}</span></label>

@@ -2,6 +2,16 @@ import * as d3 from "d3";
 import * as topojson from "topojson-client";
 import { CONFIG, stripAdminPrefix, loadAcehTopo } from "./api";
 
+const axisNumberFormatter = new Intl.NumberFormat("id-ID", {
+  notation: "compact",
+  compactDisplay: "short",
+  maximumFractionDigits: 1
+});
+
+function formatAxisNumber(value) {
+  return axisNumberFormatter.format(Number(value) || 0);
+}
+
 export function showTip(tooltipEl, html, evt) {
   d3.select(tooltipEl)
     .style("opacity", 1)
@@ -101,7 +111,7 @@ export function renderBarChart(container, rows, satuan, tooltipEl) {
   const height = Math.max(260, Math.min(rows.length, 50) * 22 + 40);
   const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height);
   const width = container.clientWidth;
-  const margin = { top: 10, right: 40, bottom: 20, left: 220 };
+  const margin = { top: 10, right: 40, bottom: 32, left: 220 };
   svg.attr("viewBox", `0 0 ${width} ${height}`);
 
   const parsed = rows.slice(0, 50);
@@ -109,7 +119,9 @@ export function renderBarChart(container, rows, satuan, tooltipEl) {
   const y = d3.scaleBand().domain(parsed.map(d => d.label)).range([margin.top, height - margin.bottom]).padding(0.25);
 
   const g = svg.append("g");
-  g.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(5));
+  const tickCount = Math.max(2, Math.floor((width - margin.left - margin.right) / 72));
+  g.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(tickCount).tickFormat(formatAxisNumber));
   g.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y));
 
   g.selectAll("rect.bar").data(parsed).join("rect")
@@ -124,17 +136,30 @@ export function renderTrendChart(svgNode, data, satuan, tooltipEl) {
   const svgEl = d3.select(svgNode);
   svgEl.selectAll("*").remove();
   const width = svgNode.parentElement.clientWidth || 800;
-  const height = 260;
-  const margin = { top: 20, right: 30, bottom: 30, left: 60 };
+  const height = 300;
+  const margin = { top: 20, right: 30, bottom: 70, left: 60 };
   svgEl.attr("viewBox", `0 0 ${width} ${height}`);
 
   const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).range([margin.left, width - margin.right]);
   const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.15]).range([height - margin.bottom, margin.top]);
+  const maxTickCount = Math.max(2, Math.floor((width - margin.left - margin.right) / 58));
+  const tickStep = Math.max(1, Math.ceil(data.length / maxTickCount));
+  const tickYears = data
+    .filter((item, index) => index % tickStep === 0 || index === data.length - 1)
+    .map(item => item.year);
 
   const g = svgEl.append("g");
-  g.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(Math.min(data.length, 10)).tickFormat(d3.format("d")));
-  g.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5));
+  const xAxis = g.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).tickValues(tickYears).tickFormat(d3.format("d")));
+  if (tickYears.length > 4) {
+    xAxis.selectAll("text")
+      .attr("text-anchor", "end")
+      .attr("dx", "-.55em")
+      .attr("dy", ".2em")
+      .attr("transform", "rotate(-35)");
+  }
+  g.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(5).tickFormat(formatAxisNumber));
 
   const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
   g.append("path").datum(data).attr("class", "trend-line").attr("d", line);
@@ -304,9 +329,11 @@ export function renderMultiTrendChart(container, series, tooltipEl, options = {}
 export function renderDonutChart(container, data, tooltipEl, { donut = true, unit = "" } = {}) {
   d3.select(container).selectAll("*").remove();
   const width = container.clientWidth || 420;
-  const height = 370;
+  const height = Math.max(370, data.length * 30 + 64);
   const radius = Math.min(width * 0.28, 118);
-  const colors = ["#d92419", "#1f6feb", "#0f8a63", "#9a5bd1", "#d97706", "#de5e40"];
+  // Golden-angle hue spacing produces a distinct color for every category,
+  // without recycling colors when a dataset has more than six categories.
+  const colors = data.map((_, index) => d3.hsl((index * 137.508) % 360, 0.68, 0.46).formatHex());
   const svg = d3.select(container).append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
   const pie = d3.pie().sort(null).value(d => d.value)(data);
   const arc = d3.arc().innerRadius(donut ? radius * .58 : 0).outerRadius(radius);
@@ -320,9 +347,10 @@ export function renderDonutChart(container, data, tooltipEl, { donut = true, uni
   }
   const legend = svg.append("g").attr("transform", `translate(${width * .62},42)`);
   data.forEach((item, index) => {
-    const row = legend.append("g").attr("transform", `translate(0,${index * 48})`);
+    const row = legend.append("g").attr("transform", `translate(0,${index * 30})`);
     row.append("rect").attr("width", 14).attr("height", 14).attr("rx", 4).attr("fill", color(item.label));
-    row.append("text").attr("x", 22).attr("y", 12).attr("fill", "#4f4544").attr("font-size", 13).attr("font-weight", 600).text(`${item.label} (${item.value})`);
+    const label = String(item.label);
+    row.append("text").attr("x", 22).attr("y", 12).attr("fill", "#4f4544").attr("font-size", 13).attr("font-weight", 600).text(`${label.slice(0, 34)}${label.length > 34 ? "…" : ""} (${item.value})`);
   });
 }
 

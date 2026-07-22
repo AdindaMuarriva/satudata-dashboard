@@ -1,10 +1,15 @@
 const DIMENSION_COLUMNS = new Set(["kabupaten", "kecamatan", "desa", "provinsi", "tahun", "satuan", "id", "uuid"]);
 const IDENTIFIER_COLUMN_PATTERN = /(^|_)(id|uuid|kode|code|created_at|updated_at|tahun)($|_)/;
-const MEASUREMENT_COLUMN_PATTERN = /(^|_)(nilai|produksi|luas|jumlah|total|populasi|volume|berat|hasil|kapasitas|persentase|rasio|indeks|angka)($|_)/;
+const MEASUREMENT_COLUMN_PATTERN = /(^|_)(nilai|produksi|luas|jumlah|total|populasi|volume|berat|hasil|kapasitas|persentase|rasio|indeks|angka|panjang|lebar|tinggi|luas|kondisi|cakupan|akses|pelayanan|layanan|fasilitas|sarana|prasarana|ruas|jembatan|kendaraan|pelanggan|sambungan|unit)($|_)/;
 
 function isNumericColumn(rows, column) {
   const values = rows.map(row => row[column]).filter(value => value !== null && value !== undefined && value !== "");
-  return values.length > 0 && values.every(value => typeof value === "number" && Number.isFinite(value));
+  if (!values.length) return false;
+  const numericValues = values.filter(value => typeof value === "number" && Number.isFinite(value));
+  // Satu sel seperti "Tidak tersedia" tidak boleh membuat seluruh metrik
+  // portal gagal terbaca. Ambang mayoritas mencegah kolom kategori yang
+  // kebetulan mengandung angka dianggap sebagai ukuran.
+  return numericValues.length > 0 && numericValues.length / values.length >= 0.6;
 }
 
 function measurementScore(column) {

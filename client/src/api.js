@@ -259,7 +259,9 @@ export async function fetchDatasetsMultiPage() {
   let all = [...localDatasets, ...combined];
   all = all.map(d => {
     if (overrides[d.uuid]) {
-      return overrides[d.uuid];
+      // Override admin hanya berisi field yang diubah. Pertahankan metadata
+      // dari portal agar dataset tetap dapat dicocokkan dan divisualisasikan.
+      return { ...d, ...overrides[d.uuid] };
     }
     return d;
   }).filter(d => !deletedUuids.has(d.uuid));
@@ -271,11 +273,10 @@ export async function fetchDatasetsMultiPage() {
 
 export async function fetchDatasetMeta(uuid) {
   const overrides = getEditedOverrides();
-  if (overrides[uuid]) return overrides[uuid];
-
   const localDataset = getLocalDatasets().find(item => item.uuid === uuid);
   if (localDataset) return localDataset;
-  return fetchJSON(`/api/datasets/${uuid}`);
+  const remoteDataset = await fetchJSON(`/api/datasets/${uuid}`);
+  return overrides[uuid] ? { ...remoteDataset, ...overrides[uuid] } : remoteDataset;
 }
 
 export async function fetchDatasetValues(uuid, tahun) {

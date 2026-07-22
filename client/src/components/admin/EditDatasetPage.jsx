@@ -33,7 +33,9 @@ export default function EditDatasetPage({ uuid, onBack }) {
     organisasi: "",
     tahun: new Date().getFullYear(),
     satuan: "",
-    deskripsi: ""
+    deskripsi: "",
+    dashboardQuestion: "",
+    dashboardQuestionDescription: ""
   });
   
   // Spreadsheet state
@@ -82,7 +84,9 @@ export default function EditDatasetPage({ uuid, onBack }) {
           organisasi: meta.organisasi?.nama || meta.organisasi || meta.opd || "",
           tahun: meta.tahun || meta.year || new Date().getFullYear(),
           satuan: meta.satuan || "",
-          deskripsi: meta.deskripsi || meta.notes || ""
+          deskripsi: meta.deskripsi || meta.notes || "",
+          dashboardQuestion: meta.dashboardQuestion || "",
+          dashboardQuestionDescription: meta.dashboardQuestionDescription || ""
         });
         
         const rows = values.rows || [];
@@ -146,6 +150,8 @@ export default function EditDatasetPage({ uuid, onBack }) {
         tahun: String(updatedForm.tahun),
         satuan: updatedForm.satuan,
         deskripsi: updatedForm.deskripsi,
+        dashboardQuestion: updatedForm.dashboardQuestion,
+        dashboardQuestionDescription: updatedForm.dashboardQuestionDescription,
         csvRows: updatedRows.map(row => {
           // Keep only active columns plus metadata keys
           const cleanRow = {};
@@ -402,6 +408,26 @@ export default function EditDatasetPage({ uuid, onBack }) {
               onChange={handleFormChange} 
               placeholder="Jelaskan cakupan dan sumber data singkat." 
               rows="3" 
+            />
+          </label>
+          <label className="form-wide">
+            Pertanyaan di dashboard (opsional)
+            <input
+              name="dashboardQuestion"
+              value={form.dashboardQuestion}
+              onChange={handleFormChange}
+              placeholder="Contoh: Kabupaten mana yang memiliki produksi padi tertinggi?"
+            />
+            <small>Jika diisi, pertanyaan ini otomatis tampil pada dashboard kategori dataset dan membuka dataset ini.</small>
+          </label>
+          <label className="form-wide">
+            Deskripsi pertanyaan (opsional)
+            <textarea
+              name="dashboardQuestionDescription"
+              value={form.dashboardQuestionDescription}
+              onChange={handleFormChange}
+              placeholder="Contoh: Membandingkan produksi padi antar kabupaten/kota."
+              rows="3"
             />
           </label>
         </div>
