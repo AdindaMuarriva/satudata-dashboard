@@ -1,5 +1,5 @@
 export const CONFIG = {
-  baseUrl: "http://localhost:3001",
+  baseUrl: "https://satudata-proxy.vercel.app",
   pollingIntervalMs: 30000,
   datasetPagesToFetch: 8,
   datasetPageSize: 100,
