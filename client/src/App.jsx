@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ListPage from "./ListPage";
 import DetailPage from "./Detailpage";
 import OrgPage from "./OrgPage";
@@ -13,25 +13,41 @@ import SocialDashboardPage from "./SocialDashboardPage";
 import InfrastructureDashboardPage from "./InfrastructureDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
-
-const SESSION_KEY = "satudata_admin_session";
+import { supabase } from "./lib/supabase";
+import { createActivityLog } from "./api/activity";
 
 // Baca sesi admin langsung (tanpa mount AuthGate) — cuma dipakai buat
 // nampilin bar kecil "Login sebagai admin" pas admin lagi liat-liat
 // halaman publik. Ini BUKAN pintu keamanan, cuma info tampilan biasa.
-function readAdminSession() {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(SESSION_KEY);
-    const session = raw ? JSON.parse(raw) : null;
-    return session?.role === "admin" ? session : null;
-  } catch {
-    return null;
-  }
-}
-
 export default function App() {
   const tooltipRef = useRef(null);
+  const [authNotice, setAuthNotice] = useState("");
+  const [adminSession, setAdminSession] = useState(null);
+  useEffect(() => {
+    try {
+      const notice = window.sessionStorage.getItem("satudata_auth_notice");
+      if (notice) {
+        window.sessionStorage.removeItem("satudata_auth_notice");
+        setAuthNotice(notice);
+        const timer = window.setTimeout(() => setAuthNotice(""), 4200);
+        return () => window.clearTimeout(timer);
+      }
+    } catch {
+      // Storage may be unavailable in private/restricted browser contexts.
+    }
+  }, []);
+
+  useEffect(() => {
+    const setSession = (session) => setAdminSession(session?.user ?? null);
+
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+
+    return () => subscription.unsubscribe();
+  }, []);
   const params = new URLSearchParams(window.location.search);
   const uuid = params.get("dataset");
   const org = params.get("org");
@@ -91,18 +107,21 @@ export default function App() {
     <ListPage tooltipRef={tooltipRef} />
   );
 
-  const adminSession = readAdminSession();
+  async function handleLogoutFromPublicBar() {
+    void createActivityLog("Logout", "Admin keluar dari sistem.").catch(() => {});
+    const { error } = await supabase.auth.signOut();
+    if (error) return;
 
-  function handleLogoutFromPublicBar() {
-    window.localStorage.removeItem(SESSION_KEY);
+    window.sessionStorage.setItem("satudata_auth_notice", "Anda berhasil logout dari area admin.");
     window.location.reload();
   }
 
   return (
     <div className="wrap">
+      {authNotice && <div className="auth-toast" role="status">{authNotice}</div>}
       {adminSession && (
         <div className="admin-bar">
-          <span>Login sebagai admin: {adminSession.fullName || "Admin"}</span>
+          <span>Login sebagai admin: {adminSession.user_metadata?.full_name || adminSession.email || "Admin"}</span>
           <a href="?page=admin" className="admin-logout">Ke Panel Admin</a>
           <button type="button" className="admin-logout" onClick={handleLogoutFromPublicBar}>Logout</button>
         </div>

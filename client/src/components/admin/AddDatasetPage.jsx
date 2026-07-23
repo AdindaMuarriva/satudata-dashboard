@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, FileSpreadsheet, Upload } from "lucide-react";
-import { CONFIG, fetchJSON, getLocalDatasets, saveLocalDataset, unwrapArray } from "../../api";
+import { CONFIG, fetchJSON, unwrapArray } from "../../api";
+import { createDataset } from "../../api/dataset";
+import { createActivityLog } from "../../api/activity";
 import { DATA_FILE_ACCEPT, readDataFile } from "../../utils/fileImport";
 
 const categories = ["Masyarakat", "Kesehatan", "Pendidikan", "Infrastruktur", "Pertanian", "Sosial", "Statistik", "Lingkungan"];
@@ -38,7 +40,7 @@ export default function AddDatasetPage({ onBack, onSaved, mode = "dataset" }) {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!file || !csvRows.length) return setMessage("Unggah file data yang berisi minimal satu baris.");
 
@@ -58,9 +60,10 @@ export default function AddDatasetPage({ onBack, onSaved, mode = "dataset" }) {
       csvRows,
       created_at: new Date().toISOString(),
     };
-    saveLocalDataset(dataset);
+    const { totalLocalDatasets } = await createDataset(dataset);
+    void createActivityLog("Tambah Dataset", `Menambahkan dataset "${dataset.judul}".`).catch(() => {});
     onSaved?.();
-    setMessage(`Dataset berhasil ditambahkan. ${getLocalDatasets().length} dataset lokal tersimpan.`);
+    setMessage(`Dataset berhasil ditambahkan. ${totalLocalDatasets} dataset lokal tersimpan.`);
   }
 
   return (

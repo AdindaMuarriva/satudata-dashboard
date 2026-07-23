@@ -32,7 +32,7 @@ export default function RecentDatasetsPage({ onBack, onEditDataset }) {
   const [datasets, setDatasets] = useState([]);
 
   function loadData() {
-    setDatasets(getLocalDatasets());
+    setDatasets(getLocalDatasets().filter((dataset) => !dataset.deleted_at));
   }
 
   useEffect(() => {

@@ -4,10 +4,13 @@ import {
   Database,
   Building2,
   Users,
-  Settings,
+  Info,
   LogOut,
+  Trash2,
 } from "lucide-react";
-import { CONFIG, fetchDatasetsMultiPage, fetchJSON, getLocalDatasets, pick } from "../api";
+import { CONFIG, fetchJSON, getLocalDatasets, pick } from "../api";
+import { getDatasets } from "../api/dataset";
+import { getAdmins } from "../api/admin";
 import Dashboard from "./admin/Dashboard";
 import DatasetPage from "./admin/DatasetPage";
 import OPDPage from "./admin/OPDPage";
@@ -17,17 +20,7 @@ import AddDatasetPage from "./admin/AddDatasetPage";
 import EditDatasetPage from "./admin/EditDatasetPage";
 import RecentDatasetsPage from "./admin/RecentDatasetsPage";
 import ReportPage from "./admin/ReportPage";
-
-function readAdminCount() {
-  if (typeof window === "undefined") return 0;
-  try {
-    const raw = window.localStorage.getItem("satudata_admin_accounts");
-    const accounts = raw ? JSON.parse(raw) : [];
-    return accounts.filter((account) => account.role === "admin").length;
-  } catch {
-    return 0;
-  }
-}
+import TrashPage from "./admin/TrashPage";
 
 function resolveTitle(dataset) {
   return pick(dataset, ["judul", "name", "title"], "Dataset tanpa judul");
@@ -50,7 +43,7 @@ function resolveYear(dataset) {
 }
 
 function resolveStatus(dataset) {
-  return dataset?.deleted_at || dataset?.deletedAt ? "Draft" : "Aktif";
+  return dataset?.is_active === false ? "Nonaktif" : "Aktif";
 }
 
 export default function AdminPage({ user, onLogout }) {
@@ -79,9 +72,10 @@ export default function AdminPage({ user, onLogout }) {
       setError("");
 
       try {
-        const [{ rows, totalCount }, organizationsJson] = await Promise.all([
-          fetchDatasetsMultiPage(),
+        const [{ rows, totalCount }, organizationsJson, admins] = await Promise.all([
+          getDatasets(),
           fetchJSON(CONFIG.endpoints.organizations).catch(() => []),
+          getAdmins(),
         ]);
 
         if (!mounted) return;
@@ -94,7 +88,7 @@ export default function AdminPage({ user, onLogout }) {
         setStats({
           totalDatasets: totalCount || dataRows.length,
           organizationCount: orgNames.length || (Array.isArray(organizationsJson) ? organizationsJson.length : 0),
-          adminCount: readAdminCount(),
+          adminCount: admins.length,
           activeYear: years.length ? Math.max(...years) : new Date().getFullYear(),
         });
       } catch (err) {
@@ -155,6 +149,14 @@ export default function AdminPage({ user, onLogout }) {
           </button>
 
           <button
+            className={`sidebar-item ${activePage === "trash" ? "active" : ""}`}
+            onClick={() => setActivePage("trash")}
+          >
+            <Trash2 size={20} />
+            Tempat Sampah
+          </button>
+
+          <button
             className={`sidebar-item ${activePage === "opd" ? "active" : ""}`}
             onClick={() => setActivePage("opd")}
           >
@@ -167,15 +169,15 @@ export default function AdminPage({ user, onLogout }) {
             onClick={() => setActivePage("user")}
           >
             <Users size={20} />
-            Pengguna
+            Informasi Admin
           </button>
 
           <button
             className={`sidebar-item ${activePage === "settings" ? "active" : ""}`}
             onClick={() => setActivePage("settings")}
           >
-            <Settings size={20} />
-            Pengaturan
+            <Info size={20} />
+            Tentang Sistem
           </button>
 
         </nav>
@@ -260,6 +262,7 @@ export default function AdminPage({ user, onLogout }) {
             }}
           />
         )}
+        {activePage === "trash" && <TrashPage />}
         {activePage === "edit-dataset" && (
           <EditDatasetPage
             uuid={editDatasetUuid}

@@ -1,81 +1,32 @@
-import { useEffect, useState } from "react";
-import {
-  Save,
-  Globe,
-  Palette,
-  Database,
-  Image,
-  RefreshCw
-} from "lucide-react";
+//TENTANG SISTEM PAGE
 
-const STORAGE_KEY = "satudata_settings";
+import { Database, Globe, Shield, Server, User, Info } from "lucide-react";
 
-const defaultSetting = {
+export default function SettingPage() {
 
-  portalName: "SatuData Aceh",
+  const systemInfo = {
 
-  portalDescription:
-    "Portal Data Terbuka Pemerintah Aceh",
+    appName: "Dashboard SatuData Aceh",
 
-  apiUrl:
-    "https://satudata.acehprov.go.id/api",
+    version: "v1.0.0",
 
-  primaryColor: "#9d1b1b",
+    frontend: "React + Vite",
 
-  logo:
-    "/logo-aceh.png"
+    backend: "Supabase",
 
-};
+    database: "PostgreSQL (Supabase)",
 
-export default function SettingPage(){
+    auth: "Supabase Authentication",
 
-  const [setting,setSetting] = useState(defaultSetting);
+    api: "https://satudata.acehprov.go.id/api",
 
-  useEffect(()=>{
+    environment: import.meta.env.MODE === "production"
+      ? "Production"
+      : "Development"
 
-    const raw = localStorage.getItem(STORAGE_KEY);
+  };
 
-    if(raw){
-
-      setSetting(JSON.parse(raw));
-
-    }
-
-  },[]);
-
-  function handleChange(e){
-
-    setSetting({
-
-      ...setting,
-
-      [e.target.name]:e.target.value
-
-    });
-
-  }
-
-  function saveSetting(){
-
-    localStorage.setItem(
-
-      STORAGE_KEY,
-
-      JSON.stringify(setting)
-
-    );
-
-    alert("Pengaturan berhasil disimpan.");
-
-  }
-
-  function resetSetting(){
-
-    setSetting(defaultSetting);
-
-  }
-
-  return(
+  return (
 
 <div className="admin-content">
 
@@ -83,26 +34,15 @@ export default function SettingPage(){
 
 <div>
 
-<h2>Pengaturan Sistem</h2>
+<h2>Informasi Sistem</h2>
 
 <p>
 
-Kelola konfigurasi portal SatuData.
+Informasi konfigurasi aplikasi Dashboard SatuData Aceh.
 
 </p>
 
 </div>
-
-<button
-className="btn-primary"
-onClick={saveSetting}
->
-
-<Save size={18}/>
-
-Simpan
-
-</button>
 
 </div>
 
@@ -112,45 +52,35 @@ Simpan
 
 <h3>
 
-<Globe size={18}/>
+<Info size={18}/>
 
-Informasi Portal
+Informasi Aplikasi
 
 </h3>
 
-<label>
+<div className="setting-item">
 
-Nama Portal
+<span>Nama Aplikasi</span>
 
-<input
+<strong>{systemInfo.appName}</strong>
 
-name="portalName"
+</div>
 
-value={setting.portalName}
+<div className="setting-item">
 
-onChange={handleChange}
+<span>Versi</span>
 
-/>
+<strong>{systemInfo.version}</strong>
 
-</label>
+</div>
 
-<label>
+<div className="setting-item">
 
-Deskripsi
+<span>Frontend</span>
 
-<textarea
+<strong>{systemInfo.frontend}</strong>
 
-name="portalDescription"
-
-rows="4"
-
-value={setting.portalDescription}
-
-onChange={handleChange}
-
-/>
-
-</label>
+</div>
 
 </div>
 
@@ -160,25 +90,45 @@ onChange={handleChange}
 
 <Database size={18}/>
 
+Database
+
+</h3>
+
+<div className="setting-item">
+
+<span>Database</span>
+
+<strong>{systemInfo.database}</strong>
+
+</div>
+
+<div className="setting-item">
+
+<span>Authentication</span>
+
+<strong>{systemInfo.auth}</strong>
+
+</div>
+
+</div>
+
+<div className="setting-card">
+
+<h3>
+
+<Globe size={18}/>
+
 API
 
 </h3>
 
-<label>
+<div className="setting-item">
 
-Base URL API
+<span>Portal API</span>
 
-<input
+<strong>{systemInfo.api}</strong>
 
-name="apiUrl"
-
-value={setting.apiUrl}
-
-onChange={handleChange}
-
-/>
-
-</label>
+</div>
 
 </div>
 
@@ -186,29 +136,19 @@ onChange={handleChange}
 
 <h3>
 
-<Palette size={18}/>
+<Server size={18}/>
 
-Tema
+Lingkungan
 
 </h3>
 
-<label>
+<div className="setting-item">
 
-Warna Utama
+<span>Status</span>
 
-<input
+<strong>{systemInfo.environment}</strong>
 
-type="color"
-
-name="primaryColor"
-
-value={setting.primaryColor}
-
-onChange={handleChange}
-
-/>
-
-</label>
+</div>
 
 </div>
 
@@ -216,57 +156,57 @@ onChange={handleChange}
 
 <h3>
 
-<Image size={18}/>
+<Shield size={18}/>
 
-Logo
+Keamanan
 
 </h3>
 
-<label>
+<div className="setting-item">
 
-Path Logo
+<span>Login Admin</span>
 
-<input
+<strong>Supabase Authentication</strong>
 
-name="logo"
+</div>
 
-value={setting.logo}
+<div className="setting-item">
 
-onChange={handleChange}
+<span>Password</span>
 
-/>
-
-</label>
-
-<img
-
-src={setting.logo}
-
-alt="logo"
-
-className="setting-logo"
-
-/>
+<strong>Terenkripsi oleh Supabase</strong>
 
 </div>
 
 </div>
 
-<div className="setting-action">
+<div className="setting-card">
 
-<button
+<h3>
 
-className="btn-outline"
+<User size={18}/>
 
-onClick={resetSetting}
+Administrator
 
->
+</h3>
 
-<RefreshCw size={18}/>
+<div className="setting-item">
 
-Reset Default
+<span>Status Akun</span>
 
-</button>
+<strong>Aktif</strong>
+
+</div>
+
+<div className="setting-item">
+
+<span>Akses</span>
+
+<strong>Administrator</strong>
+
+</div>
+
+</div>
 
 </div>
 

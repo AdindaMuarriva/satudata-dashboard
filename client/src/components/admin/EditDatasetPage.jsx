@@ -13,11 +13,10 @@ import {
 import { 
   CONFIG, 
   fetchJSON, 
-  fetchDatasetMeta, 
-  fetchDatasetValues, 
-  saveDatasetChanges, 
   unwrapArray 
 } from "../../api";
+import { getDatasetById, updateDataset } from "../../api/dataset";
+import { createActivityLog } from "../../api/activity";
 
 const categories = ["Masyarakat", "Kesehatan", "Pendidikan", "Infrastruktur", "Pertanian", "Sosial", "Statistik", "Lingkungan"];
 
@@ -70,8 +69,7 @@ export default function EditDatasetPage({ uuid, onBack }) {
     // Fetch dataset data
     async function loadDataset() {
       try {
-        const meta = await fetchDatasetMeta(uuid);
-        const values = await fetchDatasetValues(uuid, null);
+        const { metadata: meta, values } = await getDatasetById(uuid);
         
         if (!mounted) return;
         
@@ -140,7 +138,7 @@ export default function EditDatasetPage({ uuid, onBack }) {
     
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     
-    autosaveTimer.current = setTimeout(() => {
+    autosaveTimer.current = setTimeout(async () => {
       // Map form fields back to dataset schema
       const changes = {
         judul: updatedForm.judul,
@@ -174,7 +172,8 @@ export default function EditDatasetPage({ uuid, onBack }) {
       };
       
       try {
-        saveDatasetChanges(uuid, changes);
+        await updateDataset(uuid, changes);
+        void createActivityLog("Edit Dataset", `Mengubah metadata dataset "${updatedForm.judul}".`).catch(() => {});
         setSavingStatus("saved");
       } catch (e) {
         console.error("Gagal menyimpan otomatis", e);

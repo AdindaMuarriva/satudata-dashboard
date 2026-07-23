@@ -274,25 +274,25 @@ export default function ListPage({ tooltipRef }) {
               <div className="hero-panel-sub">Data resmi Aceh dari berbagai OPD dapat diakses melalui portal ini.</div>
             </div>
             <div className="hero-dashboard-switcher" id="dashboards">
-              <button type="button" className="hero-dashboard-arrow prev" onClick={() => moveDashboardSlide(-1)} aria-label="Dashboard sebelumnya"></button>
               <div className="hero-panel-card featured">
+                <button type="button" className="hero-dashboard-arrow prev" onClick={() => moveDashboardSlide(-1)} aria-label="Dashboard sebelumnya"></button>
                 <div className="hero-panel-flag">{activeThemeDashboard.flag}</div>
                 <div className="hero-panel-title">{activeThemeDashboard.title}</div>
                 <div className="hero-panel-sub">{activeThemeDashboard.description}</div>
                 <a className="hero-panel-link" href={activeThemeDashboard.href}>Buka Dashboard</a>
-                <div className="hero-dashboard-dots">
-                  {THEME_DASHBOARD_CARDS.map((_, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      className={"hero-dashboard-dot" + (index === dashboardSlide ? " active" : "")}
-                      aria-label={`Ke slide ${index + 1}`}
-                      onClick={() => setDashboardSlide(index)}
-                    />
-                  ))}
-                </div>
+                <button type="button" className="hero-dashboard-arrow next" onClick={() => moveDashboardSlide(1)} aria-label="Dashboard berikutnya"></button>
               </div>
-              <button type="button" className="hero-dashboard-arrow next" onClick={() => moveDashboardSlide(1)} aria-label="Dashboard berikutnya"></button>
+              <div className="hero-dashboard-dots">
+                {THEME_DASHBOARD_CARDS.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className={"hero-dashboard-dot" + (index === dashboardSlide ? " active" : "")}
+                    aria-label={`Ke slide ${index + 1}`}
+                    onClick={() => setDashboardSlide(index)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

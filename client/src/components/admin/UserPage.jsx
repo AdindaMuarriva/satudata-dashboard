@@ -1,229 +1,108 @@
-import { useEffect, useState } from "react";
-import {
-  Users,
-  Search,
-  Plus,
-  Pencil,
-  Trash2,
-  Shield,
-  User
-} from "lucide-react";
+// INFORMASI ADMIN PAGE
 
-const STORAGE_KEY = "satudata_admin_accounts";
+import { useEffect, useState } from "react";
+import { Activity, CalendarDays, RefreshCw, Users } from "lucide-react";
+import { getAdmins } from "../../api/admin";
+import { getActivityLogs } from "../../api/activity";
+
+function formatDate(date) {
+  if (!date) return "-";
+  return new Date(date).toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export default function UserPage() {
+  const [admins, setAdmins] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [users,setUsers] = useState([]);
-  const [keyword,setKeyword] = useState("");
+  async function loadAdminInformation() {
+    setLoading(true);
+    setError("");
 
-  useEffect(()=>{
+    const [adminsResult, logsResult] = await Promise.allSettled([
+      getAdmins(),
+      getActivityLogs(),
+    ]);
 
-    loadUsers();
+    const nextAdmins = adminsResult.status === "fulfilled" && Array.isArray(adminsResult.value)
+      ? adminsResult.value
+      : [];
+    const nextLogs = logsResult.status === "fulfilled" && Array.isArray(logsResult.value)
+      ? logsResult.value
+      : [];
 
-  },[]);
+    setAdmins(nextAdmins);
+    setActivityLogs(nextLogs);
 
-  function loadUsers(){
-
-    const raw = localStorage.getItem(STORAGE_KEY);
-
-    if(!raw){
-
-      setUsers([]);
-
-      return;
-
+    if (adminsResult.status === "rejected" || logsResult.status === "rejected") {
+      setError("Sebagian informasi admin atau aktivitas tidak dapat dimuat.");
     }
 
-    try{
-
-      setUsers(JSON.parse(raw));
-
-    }
-
-    catch{
-
-      setUsers([]);
-
-    }
-
+    setLoading(false);
   }
 
-  function deleteUser(index){
-
-    if(!window.confirm("Hapus user ini?")) return;
-
-    const copy = [...users];
-
-    copy.splice(index,1);
-
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(copy));
-
-    setUsers(copy);
-
-  }
-
-  const filtered = users.filter(user=>{
-
-    const key = keyword.toLowerCase();
-
-    return(
-
-      user.fullName.toLowerCase().includes(key) ||
-
-      user.email.toLowerCase().includes(key)
-
-    );
-
-  });
-
-  const adminCount = users.filter(user=>user.role==="admin").length;
-
-  const operatorCount = users.filter(user=>user.role==="operator").length;
-
-  return(
-
-<div className="admin-content">
-
-<div className="page-header">
-
-<div>
-
-<h2>Pengguna</h2>
-
-<p>
-Kelola akun administrator dan operator.
-</p>
-
-</div>
-
-<button className="btn-primary">
-
-<Plus size={18}/>
-
-Tambah Pengguna
-
-</button>
-
-</div>
-
-<section className="admin-stats">
-
-<div className="stat-box red">
-
-<h2>{users.length}</h2>
-
-<span>Total User</span>
-
-</div>
-
-<div className="stat-box blue">
-
-<h2>{adminCount}</h2>
-
-<span>Administrator</span>
-
-</div>
-
-<div className="stat-box green">
-
-<h2>{operatorCount}</h2>
-
-<span>Operator</span>
-
-</div>
-
-</section>
-
-<div className="toolbar">
-
-<div className="search-box">
-
-<Search size={18}/>
-
-<input
-type="text"
-placeholder="Cari pengguna..."
-value={keyword}
-onChange={(e)=>setKeyword(e.target.value)}
-/>
-
-</div>
-
-</div>
-
-<div className="user-grid">
-
-{filtered.map((user,index)=>(
-
-<div
-className="user-card"
-key={index}
->
-
-<div className="user-avatar">
-
-{user.fullName?.charAt(0).toUpperCase()}
-
-</div>
-
-<div className="user-info">
-
-<h3>
-
-{user.fullName}
-
-</h3>
-
-<p>
-
-{user.email}
-
-</p>
-
-<span className={`role ${user.role}`}>
-
-{user.role==="admin" ? (
-
-<Shield size={14}/>
-
-):(
-
-<User size={14}/>
-
-)}
-
-{user.role}
-
-</span>
-
-</div>
-
-<div className="user-action">
-
-<button>
-
-<Pencil size={17}/>
-
-</button>
-
-<button
-onClick={()=>deleteUser(index)}
->
-
-<Trash2 size={17}/>
-
-</button>
-
-</div>
-
-</div>
-
-))}
-
-</div>
-
-</div>
-
+  useEffect(() => {
+    loadAdminInformation();
+  }, []);
+
+  const lastActivity = activityLogs[0];
+
+  return (
+    <div className="admin-content">
+      <div className="page-header">
+        <div>
+          <h2>Informasi Admin</h2>
+          <p>Ringkasan administrator terdaftar dan riwayat aktivitas pada sistem.</p>
+        </div>
+        <button className="btn-outline" onClick={loadAdminInformation}>
+          <RefreshCw size={18} /> Refresh
+        </button>
+      </div>
+
+      <section className="admin-stats">
+        <div className="stat-box red">
+          <h2>{loading ? "..." : admins.length}</h2>
+          <span>Total Admin Terdaftar</span>
+        </div>
+        <div className="stat-box blue">
+          <h2>{loading ? "..." : activityLogs.length}</h2>
+          <span>Total Aktivitas</span>
+        </div>
+        <div className="stat-box green">
+          <h2>{loading ? "..." : lastActivity ? formatDate(lastActivity.created_at) : "-"}</h2>
+          <span>Aktivitas Terakhir</span>
+        </div>
+      </section>
+
+      <div className="table-card">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Admin</th>
+              <th>Aktivitas</th>
+              <th>Deskripsi</th>
+              <th>Tanggal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={4}>Memuat aktivitas...</td></tr>}
+            {!loading && error && <tr><td colSpan={4} className="admin-empty">{error}</td></tr>}
+            {!loading && activityLogs.map((log) => (
+              <tr key={log.id}>
+                <td><Users size={16} style={{ marginRight: 6, verticalAlign: "-3px" }} />{log.admin_name || "Admin"}</td>
+                <td><Activity size={16} style={{ marginRight: 6, verticalAlign: "-3px" }} />{log.activity}</td>
+                <td>{log.description || "-"}</td>
+                <td><CalendarDays size={16} style={{ marginRight: 6, verticalAlign: "-3px" }} />{formatDate(log.created_at)}</td>
+              </tr>
+            ))}
+            {!loading && !error && activityLogs.length === 0 && <tr><td colSpan={4} className="admin-empty">Belum ada aktivitas admin yang tercatat.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
-
 }
