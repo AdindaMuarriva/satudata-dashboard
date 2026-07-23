@@ -26,6 +26,67 @@ function formatValue(value) {
   return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(value);
 }
 
+function unitLabel(rows = []) {
+  const units = [...new Set(rows.map(row => row.satuan).filter(Boolean))];
+  return units.length === 1 ? ` ${units[0]}` : "";
+}
+
+/**
+ * Penjelasan yang ditujukan untuk pembaca awam. Seluruh kalimat dibentuk dari
+ * statistik dataset yang sedang difilter, sehingga otomatis berubah bersama
+ * tahun/wilayah/kategori dan tidak menebak makna indikator di luar sumber.
+ */
+export function generateChartExplanation(preprocessingResult, filters = {}, visualization = {}) {
+  const rows = filterRows(preprocessingResult?.cleanedData || [], filters);
+  const structure = preprocessingResult?.datasetStructure;
+  const chartType = visualization.type || "bar";
+  const period = filters.year ? `tahun ${filters.year}` : "seluruh periode yang tersedia";
+  const region = filters.region && filters.region !== "Seluruh Aceh" ? `wilayah ${filters.region}` : "seluruh wilayah/data yang tersedia";
+  const commodity = filters.commodity && filters.commodity !== "Semua komoditas" ? ` kategori ${filters.commodity}` : "";
+  const chartGuide = {
+    bar: "Setiap batang mewakili wilayah atau kategori. Batang yang lebih panjang berarti nilai indikator lebih besar; urutannya memudahkan melihat peringkat.",
+    line: "Setiap titik mewakili satu periode. Garis yang naik berarti nilai meningkat dibanding periode sebelumnya, sedangkan garis yang turun berarti nilai menurun.",
+    pie: "Setiap irisan menunjukkan bagian relatif dari total nilai. Irisan lebih besar berarti kontribusinya lebih besar terhadap data yang ditampilkan.",
+    donut: "Setiap irisan menunjukkan bagian relatif dari total nilai. Irisan lebih besar berarti kontribusinya lebih besar terhadap data yang ditampilkan.",
+    map: "Warna lebih pekat menunjukkan nilai indikator lebih tinggi. Peta dipakai untuk melihat persebaran antar kabupaten/kota, bukan untuk menilai kualitas tanpa melihat definisi indikator."
+  }[chartType] || "Chart menampilkan perbandingan nilai pada data yang sedang dipilih.";
+
+  if (!rows.length) return {
+    title: "Cara membaca hasil",
+    paragraphs: [`Belum ada baris data untuk ${period}. Ubah filter tahun atau pilih dataset lain agar penjelasan dapat dibuat dari data sumber.`],
+    guide: chartGuide,
+    points: []
+  };
+  if (!structure?.primaryValueColumn) return {
+    title: "Cara membaca hasil",
+    paragraphs: [`Visualisasi memakai ${rows.length} observasi untuk ${period}, ${region}${commodity}. Dataset ini tidak memiliki metrik numerik yang dapat dihitung, sehingga chart menunjukkan jumlah observasi per kategori.`],
+    guide: chartGuide,
+    points: ["Nilai pada chart adalah jumlah catatan, bukan total atau rata-rata suatu indikator.", "Tambahkan kolom nilai numerik pada dataset jika ingin memperoleh peringkat, rata-rata, atau perubahan tren."]
+  };
+
+  const insight = generateInsights(preprocessingResult, filters);
+  const stats = insight.statistics;
+  const unit = unitLabel(rows);
+  const largest = stats.largest;
+  const smallest = stats.smallest;
+  const range = largest && smallest ? largest.value - smallest.value : null;
+  const aboveAverage = largest && Number.isFinite(stats.average) && stats.average !== 0 ? ((largest.value - stats.average) / Math.abs(stats.average)) * 100 : null;
+  const paragraphs = [
+    `Chart ini menggunakan ${stats.dataCount} nilai numerik dari ${rows.length} baris data untuk ${period}, ${region}${commodity}. Satuan yang tercantum pada data adalah${unit || " tidak dicantumkan"}.`,
+    largest ? `Nilai tertinggi terdapat pada ${largest.label}, yaitu ${formatValue(largest.value)}${unit}. ${smallest && smallest.label !== largest.label ? `Nilai terendah terdapat pada ${smallest.label}, yaitu ${formatValue(smallest.value)}${unit}.` : ""}` : "Tidak ada nilai yang cukup untuk membuat perbandingan."
+  ];
+  const points = [];
+  if (Number.isFinite(stats.average)) points.push(`Rata-rata nilai pada data yang ditampilkan adalah ${formatValue(stats.average)}${unit}.`);
+  if (range !== null && largest?.label !== smallest?.label) points.push(`Selisih antara nilai tertinggi dan terendah adalah ${formatValue(range)}${unit}.`);
+  if (aboveAverage !== null) points.push(`${largest.label} berada ${Math.abs(aboveAverage).toFixed(1)}% ${aboveAverage >= 0 ? "di atas" : "di bawah"} rata-rata data yang ditampilkan.`);
+  if (stats.trend) {
+    const direction = stats.trend.change > 0 ? "naik" : stats.trend.change < 0 ? "turun" : "tetap";
+    points.push(`Dari ${stats.trend.previous.year} ke ${stats.trend.current.year}, nilai agregat ${direction} dari ${formatValue(stats.trend.previous.value)} menjadi ${formatValue(stats.trend.current.value)}${unit}.`);
+  }
+  points.push("Nilai tinggi atau rendah tidak otomatis berarti kondisi lebih baik atau lebih buruk; maknanya harus mengikuti definisi indikator, satuan, dan metode pengukuran pada dataset sumber.");
+  return { title: "Penjelasan lengkap chart", paragraphs, guide: chartGuide, points };
+}
+
 function createTrendChange(rows, valueColumn) {
   const yearly = aggregateBy(rows.filter(row => row.tahun !== undefined && row.tahun !== null), "tahun", valueColumn)
     .map(item => ({ ...item, year: Number(item.label) }))

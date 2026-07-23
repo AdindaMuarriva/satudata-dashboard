@@ -7,12 +7,13 @@ import TopicPage from "./TopicPage";
 import FeaturePage from "./FeaturePage";
 import SearchResultsPage from "./SearchResultsPage";
 import ComparePage from "./ComparePage";
-import MasyarakatDashboardPage from "./MasyarakatDashboardPage";
+import GenericQuestionDashboard from "./GenericQuestionDashboard";
 import AgricultureDashboardPage from "./AgricultureDashboardPage";
 import SocialDashboardPage from "./SocialDashboardPage";
 import InfrastructureDashboardPage from "./InfrastructureDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
+import { isEducationRelevant, isEnvironmentRelevant, isHealthRelevant, isStatisticsRelevant, isThemeRelevant } from "./api";
 
 const SESSION_KEY = "satudata_admin_session";
 
@@ -68,11 +69,11 @@ export default function App() {
   ) : page === "compare" ? (
     <ComparePage datasetIds={datasets ? datasets.split(",").filter(Boolean) : []} tooltipRef={tooltipRef} />
   ) : page === "dashboard-masyarakat" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} />
+    <GenericQuestionDashboard themeLabel="masyarakat" title="Dashboard Analisis Masyarakat Aceh" filterDataset={isThemeRelevant} analysisLabel="ANALISIS MASYARAKAT" />
   ) : page === "dashboard-kesehatan" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="kesehatan" />
+    <GenericQuestionDashboard themeLabel="kesehatan" title="Dashboard Analisis Kesehatan Aceh" filterDataset={isHealthRelevant} analysisLabel="ANALISIS KESEHATAN" />
   ) : page === "dashboard-pendidikan" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="pendidikan" />
+    <GenericQuestionDashboard themeLabel="pendidikan" title="Dashboard Analisis Pendidikan Aceh" filterDataset={isEducationRelevant} analysisLabel="ANALISIS PENDIDIKAN" />
   ) : page === "dashboard-infrastruktur" ? (
     <InfrastructureDashboardPage />
   ) : page === "dashboard-pertanian" ? (
@@ -82,9 +83,9 @@ export default function App() {
   ) : page === "dashboard-sosial" ? (
     <SocialDashboardPage />
   ) : page === "dashboard-statistik" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="statistik" />
+    <GenericQuestionDashboard themeLabel="statistik" title="Dashboard Analisis Statistik Aceh" filterDataset={isStatisticsRelevant} analysisLabel="ANALISIS STATISTIK" />
   ) : page === "dashboard-lingkungan" ? (
-    <MasyarakatDashboardPage tooltipRef={tooltipRef} theme="lingkungan" />
+    <GenericQuestionDashboard themeLabel="lingkungan hidup" title="Dashboard Analisis Lingkungan Hidup Aceh" filterDataset={isEnvironmentRelevant} analysisLabel="ANALISIS LINGKUNGAN" />
   ) : org ? (
     <OrgPage orgName={org} tooltipRef={tooltipRef} />
   ) : (

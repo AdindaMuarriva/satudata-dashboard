@@ -6,51 +6,19 @@ import { fetchDatasetValues, fetchDatasetsMultiPage } from "../../api";
 import { matchDataset } from "../../analysis/datasetMatcher";
 import { preprocessDataset } from "../../preprocessing/preprocessDataset";
 
-const DEFAULT_FILTERS = {
-  year: String(new Date().getFullYear()),
-  region: "Seluruh Aceh",
-  commodity: "Semua komoditas",
-  visualization: "Bar Chart"
-};
-
-function createDummyDataset(question) {
-  return {
-    id: `dummy-${question.id}`,
-    title: `Data Contoh: ${question.title}`,
-    description: question.description,
-    tags: question.keywords,
-    datasetType: question.expectedDatasetType,
-    organization: "Contoh Satu Data Aceh",
-    resources: [],
-    isDummy: true,
-    data: [
-      { "Kab/Kota": "Aceh Besar", Tahun: "2024", Komoditas: "Padi", Nilai: "1.250,5" },
-      { "Kab/Kota": "Aceh Utara", Tahun: "2024", Komoditas: "Padi", Nilai: "1.120" },
-      { "Kab/Kota": "Pidie", Tahun: "2023", Komoditas: "Padi", Nilai: "980" },
-      { "Kab/Kota": "Aceh Besar", Tahun: "2024", Komoditas: "Padi", Nilai: "1.250,5" },
-      {}
-    ]
-  };
-}
+const DEFAULT_FILTERS = { year: String(new Date().getFullYear()), region: "Seluruh Aceh", commodity: "Semua komoditas", visualization: "Bar Chart" };
 
 function normalizeYears(years = []) {
-  return [...new Set(years
-    .map(item => item?.year ?? item)
-    .map(value => String(value ?? "").match(/\b(19|20)\d{2}\b/)?.[0])
-    .filter(Boolean))]
+  return [...new Set(years.map(item => item?.year ?? item).map(value => String(value ?? "").match(/\b(19|20)\d{2}\b/)?.[0]).filter(Boolean))]
     .sort((left, right) => Number(right) - Number(left));
 }
 
 function yearsFromRows(rows = []) {
-  return normalizeYears((Array.isArray(rows) ? rows : []).flatMap(row => (
-    Object.entries(row || {})
-      .filter(([column]) => /(^|[_\s-])(tahun|year|periode)([_\s-]|$)/i.test(column))
-      .map(([, value]) => value)
-  )));
+  return normalizeYears(rows.flatMap(row => Object.entries(row || {}).filter(([column]) => /(^|[_\s-])(tahun|year|periode)([_\s-]|$)/i.test(column)).map(([, value]) => value)));
 }
 
 export default function QuestionDetail({ question, onBack, analysisLabel = "ANALISIS PERTANIAN" }) {
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, visualization: question.recommendedChart || DEFAULT_FILTERS.visualization }));
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [matchResult, setMatchResult] = useState(null);
   const [preprocessingResult, setPreprocessingResult] = useState(null);
@@ -59,204 +27,65 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
   const [pipelineNotice, setPipelineNotice] = useState("");
   const [availableYears, setAvailableYears] = useState([]);
   const resolvedQuestionRef = useRef(null);
-  const handleFilterChange = (key, value) => setFilters(current => ({ ...current, [key]: value }));
 
   useEffect(() => {
     let active = true;
-
     async function runPipeline() {
-      const isInitialYearSelection = resolvedQuestionRef.current !== question.id;
-      if (isInitialYearSelection) {
-        resolvedQuestionRef.current = question.id;
-        setAvailableYears([]);
-      }
-      setSelectedDataset(null);
-      setMatchResult(null);
-      setPreprocessingResult(null);
-      setPipelineError("");
-      setPipelineNotice("");
+      const initialQuestion = resolvedQuestionRef.current !== question.id;
+      if (initialQuestion) resolvedQuestionRef.current = question.id;
+      setSelectedDataset(null); setMatchResult(null); setPreprocessingResult(null); setPipelineError(""); setPipelineNotice("");
       setPipelineStatus({ dataset: "loading", preprocessing: "idle", visualization: "idle" });
-
-      // [LOG] Tahap 1: Question yang dipilih
-      console.log("[Pipeline] 1. Question dipilih:", question);
-
-      let dataset;
-      let result;
       try {
-        const { rows } = await fetchDatasetsMultiPage();
-
-        // [LOG] Tahap 2: Jumlah dataset dari API
-        console.log("[Pipeline] 2. Jumlah dataset dari API:", rows.length, "dataset");
-
-        if (!rows.length) throw new Error("Daftar dataset dari API tidak tersedia");
-
-        // Dataset yang berasal dari katalog portal sudah menyimpan UUID sumbernya.
-        // Ini memastikan satu pertanyaan selalu membuka visualisasi dataset tersebut.
-        const directDataset = question.datasetUuid
-          ? rows.find(candidate => candidate.uuid === question.datasetUuid)
-          : null;
-        result = directDataset
-          ? { status: "matched", dataset: directDataset, score: 100, message: "Dataset sumber pertanyaan ditemukan" }
-          : matchDataset(question, rows);
-        console.log("[Pipeline] 3. Hasil matchDataset:", { status: result.status, score: result.score, message: result.message });
-
-        if (result.status === "no_match") {
-          // [FIX] Jangan langsung error — gunakan fallback dummy dataset
-          console.warn("[Pipeline] matchDataset no_match (skor terlalu rendah). Menggunakan fallback dataset contoh.");
-          dataset = createDummyDataset(question);
-          result = matchDataset(question, [dataset]);
-          if (!active) return;
-          setPipelineNotice("Tidak ada dataset yang cukup relevan di portal. Dataset contoh digunakan untuk menguji alur analisis.");
-        } else {
-          dataset = result.dataset;
-        }
-      } catch (error) {
-        // [LOG] Tahap API gagal → fallback
-        console.warn("[Pipeline] Fetch API gagal:", error.message, "→ menggunakan fallback dataset contoh.");
-        dataset = createDummyDataset(question);
-        result = matchDataset(question, [dataset]);
+        const { rows: datasets } = await fetchDatasetsMultiPage();
+        if (!datasets.length) throw new Error("Daftar dataset portal tidak tersedia.");
+        const direct = question.datasetUuid ? datasets.find(dataset => dataset.uuid === question.datasetUuid) : null;
+        const result = direct ? { status: "matched", dataset: direct, score: 100 } : matchDataset(question, datasets);
+        if (result.status !== "matched" || !result.dataset) throw new Error("Tidak ada dataset portal yang cukup relevan untuk pertanyaan ini. Data contoh tidak digunakan.");
         if (!active) return;
-        setPipelineNotice(`API tidak tersedia. Dataset contoh digunakan untuk menguji alur analisis. (${error.message})`);
-      }
+        setSelectedDataset(result.dataset); setMatchResult(result);
+        setPipelineStatus({ dataset: "success", preprocessing: "loading", visualization: "idle" });
 
-      // [LOG] Tahap 5: Dataset terpilih
-      console.log("[Pipeline] 5. Dataset terpilih:", { judul: dataset?.judul || dataset?.title, uuid: dataset?.uuid, isDummy: dataset?.isDummy });
-
-      if (!active) return;
-      setSelectedDataset(dataset);
-      setMatchResult(result);
-      setPipelineStatus({ dataset: dataset.isDummy ? "fallback" : "success", preprocessing: "loading", visualization: "idle" });
-
-      try {
-        let rawData;
-        let resolvedYear = filters.year;
-        if (dataset.isDummy) {
-          rawData = dataset.data;
-          console.log("[Pipeline] 6. Menggunakan data dummy (isDummy=true).");
-        } else {
-          // Validasi: pastikan dataset memiliki uuid
-          const datasetId = dataset.uuid || dataset.id;
-          if (!datasetId) {
-            throw new Error("Dataset tidak memiliki ID yang valid untuk pengambilan data");
-          }
-
-          // [LOG] Tahap 6: URL datasource yang digunakan
-          const datasourcePath = `/api/datasets/${datasetId}/datasources/json?tahun=${filters.year}&limit=500&page=0&sortByColumn=&sortByType=`;
-          console.log("[Pipeline] 6. URL datasource:", datasourcePath);
-
-          const fetchResult = await fetchDatasetValues(datasetId, filters.year);
-          rawData = fetchResult.rows;
-          const metadataYears = normalizeYears(fetchResult.years);
-          if (metadataYears.length) setAvailableYears(metadataYears);
-
-          // Gunakan tahun terbaru yang benar-benar tercatat pada dataset,
-          // bukan tahun kalender. Pengguna masih bisa memilih tahun lama
-          // setelah tampilan awal selesai dimuat.
-          if (isInitialYearSelection && metadataYears[0] && metadataYears[0] !== filters.year) {
-            if (!active) return;
-            setPipelineNotice(`Menampilkan data terbaru yang tersedia: tahun ${metadataYears[0]}.`);
-            setFilters(current => current.year === filters.year ? { ...current, year: metadataYears[0] } : current);
-            return;
-          }
-
-          // Jika kosong untuk tahun dipilih, coba tahun tersedia dari metadata
-          if (!rawData || rawData.length === 0) {
-            const knownYears = metadataYears;
-            console.warn("[Pipeline] Data kosong untuk tahun", filters.year, "| Tersedia:", knownYears);
-
-            if (knownYears.length > 0) {
-              // normalizeYears mengurutkan secara menurun: indeks pertama
-              // selalu tahun terbaru yang tersedia.
-              const fallbackYear = knownYears[0];
-              console.log("[Pipeline] Mencoba fallback ke tahun", fallbackYear);
-              const retryResult = await fetchDatasetValues(datasetId, fallbackYear);
-              rawData = retryResult.rows;
-              if (rawData && rawData.length > 0) {
-                resolvedYear = fallbackYear;
-                console.log("[Pipeline] Berhasil mengambil data untuk tahun fallback", fallbackYear, ":", rawData.length, "baris");
-              }
-            }
-
-            // Jika masih kosong, coba tanpa filter tahun sama sekali
-            if (!rawData || rawData.length === 0) {
-              console.log("[Pipeline] Mencoba fetch tanpa filter tahun...");
-              const noYearResult = await fetchDatasetValues(datasetId, "");
-              rawData = noYearResult.rows;
-              const rowYears = yearsFromRows(rawData);
-              if (rowYears.length) setAvailableYears(rowYears);
-              if (rawData && rawData.length > 0) {
-                console.log("[Pipeline] Berhasil mengambil data tanpa filter tahun:", rawData.length, "baris");
-              }
-            }
-
-            if (!rawData || rawData.length === 0) {
-              const yearsLabel = knownYears.length
-                ? `(tahun tersedia di API: ${knownYears.join(", ")})`
-                : "(tidak ada tahun yang tersedia di metadata)";
-              throw new Error(`Dataset berhasil ditemukan tetapi tidak ada data untuk tahun ${filters.year} ${yearsLabel}`);
-            }
-          }
-
-          console.log("[Pipeline] 6. Datasource mengembalikan", rawData.length, "baris data.");
+        const datasetId = result.dataset.uuid || result.dataset.id;
+        if (!datasetId) throw new Error("Dataset sumber tidak memiliki ID yang valid.");
+        let response = await fetchDatasetValues(datasetId, filters.year);
+        const metadataYears = normalizeYears(response.years);
+        if (metadataYears.length) setAvailableYears(metadataYears);
+        if (initialQuestion && metadataYears[0] && metadataYears[0] !== filters.year) {
+          setPipelineNotice(`Menampilkan tahun terbaru yang tersedia: ${metadataYears[0]}.`);
+          setFilters(current => ({ ...current, year: metadataYears[0] }));
+          return;
         }
+        if (!response.rows.length && metadataYears[0]) {
+          setPipelineNotice(`Data untuk tahun ${filters.year} tidak tersedia. Menampilkan tahun ${metadataYears[0]}.`);
+          setFilters(current => ({ ...current, year: metadataYears[0] }));
+          return;
+        }
+        if (!response.rows.length) response = await fetchDatasetValues(datasetId, "");
+        if (!response.rows.length) throw new Error("Dataset ditemukan, tetapi belum memiliki baris data yang dapat dianalisis.");
 
-        const rowYears = yearsFromRows(rawData);
+        const rowYears = yearsFromRows(response.rows);
         if (rowYears.length) setAvailableYears(current => normalizeYears([...current, ...rowYears]));
-        const latestDataYear = rowYears[0];
-        if (isInitialYearSelection && latestDataYear && latestDataYear !== filters.year) {
-          if (!active) return;
-          setPipelineNotice(`Menampilkan data terbaru yang tersedia: tahun ${latestDataYear}.`);
-          setFilters(current => current.year === filters.year ? { ...current, year: latestDataYear } : current);
-          return;
-        }
-
-        // Sinkronkan filter dengan tahun fallback. Tanpa ini preprocessing
-        // berhasil, tetapi renderer kembali menyaring semua baris memakai
-        // tahun awal yang tidak tersedia.
-        if (resolvedYear && resolvedYear !== filters.year) {
-          if (!active) return;
-          setPipelineNotice(`Data untuk tahun ${filters.year} tidak tersedia. Menampilkan tahun ${resolvedYear}.`);
-          setFilters(current => current.year === filters.year ? { ...current, year: resolvedYear } : current);
-          return;
-        }
-
-        // [LOG] Tahap 7: Hasil preprocessDataset
-        const processed = preprocessDataset(rawData);
-        console.log("[Pipeline] 7. Hasil preprocessDataset:", { cleanedRows: processed.cleanedData?.length, datasetStructure: processed.datasetStructure, datasetLevel: processed.datasetLevel });
-
+        const processed = preprocessDataset(response.rows);
+        if (!processed.cleanedData.length) throw new Error("Baris data sumber tidak dapat diproses.");
+        const hasTrend = processed.datasetStructure.hasTahun && new Set(processed.cleanedData.map(row => row.tahun).filter(Boolean)).size > 1;
+        if (filters.visualization === "Line Chart" && !hasTrend) setPipelineNotice("Dataset ini tidak memiliki minimal dua periode; chart perbandingan ditampilkan sebagai pengganti tren.");
         if (!active) return;
         setPreprocessingResult(processed);
-        setPipelineStatus({ dataset: dataset.isDummy ? "fallback" : "success", preprocessing: "success", visualization: "success" });
+        setPipelineStatus({ dataset: "success", preprocessing: "success", visualization: "success" });
       } catch (error) {
-        console.error("[Pipeline] Error tahap preprocessing/datasource:", error.message);
         if (!active) return;
-        setPipelineError(error.message);
-        setPipelineStatus({ dataset: dataset.isDummy ? "fallback" : "success", preprocessing: "error", visualization: "idle" });
+        setPipelineError(error.message || "Analisis tidak dapat dilakukan.");
+        setPipelineStatus({ dataset: "error", preprocessing: "error", visualization: "idle" });
       }
     }
-
     runPipeline();
     return () => { active = false; };
   }, [question, filters.year]);
 
-  return (
-    <main className="agriculture-dashboard-page">
-      <button type="button" className="analysis-back-button" onClick={onBack}><ArrowLeft size={18} aria-hidden="true" /> Kembali ke Daftar Pertanyaan</button>
-      <section className="agriculture-detail-hero">
-        <span>{analysisLabel}</span>
-        <h1>{question.title}</h1>
-        <p>Halaman ini menyiapkan alur analisis berbasis pertanyaan. Dataset, preprocessing, visualisasi, insight, dan metadata akan dihubungkan pada tahap berikutnya.</p>
-      </section>
-      <AnalysisFilters filters={filters} availableYears={availableYears} onChange={handleFilterChange} onReset={() => setFilters(current => ({ ...DEFAULT_FILTERS, year: availableYears[0] || current.year }))} />
-      <AnalysisPlaceholder
-        filters={filters}
-        selectedDataset={selectedDataset}
-        matchResult={matchResult}
-        preprocessingResult={preprocessingResult}
-        pipelineStatus={pipelineStatus}
-        pipelineError={pipelineError}
-        pipelineNotice={pipelineNotice}
-      />
-    </main>
-  );
+  return <main className="agriculture-dashboard-page">
+    <button type="button" className="analysis-back-button dashboard-back-button" onClick={onBack}><ArrowLeft size={18} aria-hidden="true" /> Kembali ke Daftar Pertanyaan</button>
+    <section className="agriculture-detail-hero"><span>{analysisLabel}</span><h1>{question.title}</h1><p>Chart dan penjelasan dibuat hanya dari baris data dataset sumber yang tersedia di Portal Satu Data Aceh.</p></section>
+    <AnalysisFilters filters={filters} availableYears={availableYears} onChange={(key, value) => setFilters(current => ({ ...current, [key]: value }))} onReset={() => setFilters(current => ({ ...DEFAULT_FILTERS, year: availableYears[0] || current.year, visualization: question.recommendedChart || "Bar Chart" }))} />
+    <AnalysisPlaceholder filters={filters} selectedDataset={selectedDataset} matchResult={matchResult} preprocessingResult={preprocessingResult} pipelineStatus={pipelineStatus} pipelineError={pipelineError} pipelineNotice={pipelineNotice} />
+  </main>;
 }
