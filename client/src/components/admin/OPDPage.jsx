@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Building2, RefreshCw, Eye } from "lucide-react";
+import { Search, Building2, RefreshCw } from "lucide-react";
 import { CONFIG, fetchJSON, pick } from "../../api";
 import { getDatasets } from "../../api/dataset";
 
@@ -163,8 +163,6 @@ Refresh
 
 <th>Dataset</th>
 
-<th>Aksi</th>
-
 </tr>
 
 </thead>
@@ -208,16 +206,6 @@ Memuat data...
 <td>
 
 {resolveDataset(org)}
-
-</td>
-
-<td>
-
-<button className="table-icon">
-
-<Eye size={16}/>
-
-</button>
 
 </td>
 
