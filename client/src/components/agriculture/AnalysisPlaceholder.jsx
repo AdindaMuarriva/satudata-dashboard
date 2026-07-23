@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { BarChart3, ChartNoAxesColumnIncreasing, Database, PieChart, Sparkles, TrendingUp } from "lucide-react";
 import VisualizationRenderer from "./VisualizationRenderer";
-import { generateInsights } from "../../analysis/insightGenerator";
+import { generateChartExplanation, generateInsights } from "../../analysis/insightGenerator";
+import { selectVisualization } from "../../analysis/visualizationEngine";
 
 const STAGES = [
   { key: "dataset", label: "Dataset", text: "Memilih dataset yang paling relevan.", icon: Database },
@@ -12,12 +13,14 @@ const STAGES = [
 const VISUALIZATION_ICONS = { "Bar Chart": BarChart3, "Line Chart": TrendingUp, "Pie Chart": PieChart, "Donut Chart": PieChart, Histogram: ChartNoAxesColumnIncreasing };
 
 function statusLabel(status) {
-  return { loading: "Memuat", success: "Selesai", fallback: "Data contoh", error: "Gagal", idle: "Menunggu" }[status] || "Menunggu";
+  return { loading: "Memuat", success: "Selesai", error: "Gagal", idle: "Menunggu" }[status] || "Menunggu";
 }
 
 export default function AnalysisPlaceholder({ filters, selectedDataset, matchResult, preprocessingResult, pipelineStatus, pipelineError, pipelineNotice }) {
   const VisualizationIcon = VISUALIZATION_ICONS[filters.visualization] || BarChart3;
   const insight = useMemo(() => generateInsights(preprocessingResult, filters), [preprocessingResult, filters]);
+  const chartModel = useMemo(() => selectVisualization(preprocessingResult, filters), [preprocessingResult, filters]);
+  const explanation = useMemo(() => generateChartExplanation(preprocessingResult, filters, chartModel), [preprocessingResult, filters, chartModel]);
   return (
     <>
       <section className="analysis-stage-grid" aria-label="Status proses analisis">
@@ -38,6 +41,15 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
         {preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} /> : <div className="analysis-chart-skeleton" aria-label={`Placeholder ${filters.visualization}`}></div>}
       </section>
 
+      {preprocessingResult ? <section className="analysis-placeholder-panel chart-explanation-panel" aria-live="polite">
+        <div className="placeholder-panel-heading"><span className="insight-icon" role="img" aria-label="Penjelasan">💡</span><div><h2>{explanation.title}</h2><p>{explanation.guide}</p></div></div>
+        <div className="chart-explanation-body">
+          {explanation.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          {explanation.points.length ? <ul className="analysis-insight-list">{explanation.points.map(point => <li key={point}>{point}</li>)}</ul> : null}
+          <p className="chart-explanation-source">Penjelasan ini diperbarui otomatis setiap filter tahun, wilayah, kategori, atau jenis visualisasi berubah.</p>
+        </div>
+      </section> : null}
+
       <section className="analysis-detail-grid">
         <article className="analysis-placeholder-panel">
           <div className="placeholder-panel-heading"><span className="insight-icon" role="img" aria-label="Insight">💡</span><div><h2>{insight.title}</h2><p>{insight.summary}</p></div></div>
@@ -46,7 +58,7 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
         </article>
         <article className="analysis-placeholder-panel">
           <div className="placeholder-panel-heading"><Database size={23} aria-hidden="true" /><div><h2>Metadata Dataset</h2><p>Dataset sumber untuk periode {filters.year}, OPD, satuan, dan langkah pengolahan akan dicantumkan di sini.</p></div></div>
-          {selectedDataset ? <dl className="dataset-debug-metadata"><div><dt>Dataset sumber visualisasi</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>{selectedDataset.isDummy ? "Dataset contoh" : "Portal Satu Data Aceh"}</dd></div></dl> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
+          {selectedDataset ? <dl className="dataset-debug-metadata"><div><dt>Dataset sumber visualisasi</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>Portal Satu Data Aceh</dd></div></dl> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
         </article>
       </section>
     </>

@@ -110,6 +110,7 @@ export default function ListPage({ tooltipRef }) {
   const [orgNames, setOrgNames] = useState([]);
   // const [status, setStatus] = useState({ ok: true, text: "Menghubungkan..." });
   const [banner, setBanner] = useState({ warn: false, html: "" });
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState("");
@@ -133,6 +134,7 @@ export default function ListPage({ tooltipRef }) {
   }
 
   async function load() {
+    setDashboardLoading(true);
     try {
       const [{ rows: datasetRows, totalCount: tc }, kabkotaJson, orgsJson, dashboardJson] = await Promise.all([
         fetchDatasetsMultiPage(),
@@ -159,8 +161,9 @@ export default function ListPage({ tooltipRef }) {
       });
     } catch (err) {
       console.error("Gagal memuat data:", err);
-      setStatus({ ok: false, text: "Gagal terhubung — cek console (F12)" });
       setBanner({ warn: true, html: `<b>Gagal menghubungi API.</b> Error: <code>${err.message}</code>` });
+    } finally {
+      setDashboardLoading(false);
     }
   }
 
@@ -253,7 +256,7 @@ export default function ListPage({ tooltipRef }) {
                 <span className="hero-summary-label">Instansi</span>
               </div>
               <div className="hero-summary-card">
-                <span className="hero-summary-value">{matchedDashboards.length}</span>
+                <span className="hero-summary-value">{THEME_DASHBOARD_CARDS.length}</span>
                 <span className="hero-summary-label">Dashboard Resmi</span>
               </div>
             </div>
@@ -341,7 +344,7 @@ export default function ListPage({ tooltipRef }) {
           <h2>Katalog Dataset Terintegrasi</h2>
           <div className="sub">Klik judul dataset untuk membuka visualisasinya di halaman tersendiri.</div>
           <ul className="list">
-            {filtered.length === 0 && <li>Tidak ada dataset cocok. Coba kata kunci lain atau pilih topik yang berbeda.</li>}
+            {dashboardLoading ? <li className="dashboard-status-message"><span className="running-dot" aria-hidden="true"></span>Memuat katalog dataset<span className="running-ellipsis" aria-label="sedang memuat"></span></li> : filtered.length === 0 ? <li className="dashboard-status-message"><span className="status-dot" aria-hidden="true"></span>Tidak ada dataset cocok. Coba kata kunci lain atau pilih topik yang berbeda.</li> : null}
             {filtered.slice(0, 60).map(d => (
               <li key={d.uuid}>
                 <a className="row-link" href={`?dataset=${d.uuid}`}>
@@ -365,7 +368,7 @@ export default function ListPage({ tooltipRef }) {
           <h2>Dashboard Resmi Terkait</h2>
           <div className="sub">Klik untuk membuka dashboard aslinya</div>
           <ul className="list">
-            {matchedDashboards.length === 0 && <li>Belum ada dashboard resmi yang cocok.</li>}
+            {dashboardLoading ? <li className="dashboard-status-message"><span className="running-dot" aria-hidden="true"></span>Memuat dashboard resmi terkait<span className="running-ellipsis" aria-label="sedang memuat"></span></li> : matchedDashboards.length === 0 ? <li className="dashboard-status-message"><span className="status-dot" aria-hidden="true"></span>Belum ada dashboard resmi yang cocok.</li> : null}
             {matchedDashboards.slice(0, 20).map(d => (
               <li key={d.id}>
                 <a className="row-link" href={d.url || "#"} target="_blank" rel="noreferrer">

@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Construction } from "lucide-react";
+import { ArrowLeft, Construction } from "lucide-react";
 import { CONFIG, fetchDatasetsMultiPage, isInfrastructureRelevant } from "./api";
 import QuestionCategory from "./components/agriculture/QuestionCategory";
 import QuestionDetail from "./components/agriculture/QuestionDetail";
 import QuestionSearch from "./components/agriculture/QuestionSearch";
 import { INFRASTRUCTURE_QUESTION_CATEGORIES, INFRASTRUCTURE_QUESTIONS, createInfrastructureDatasetQuestions } from "./config/questions/infrastructureQuestions";
+import DataQuestionAssistant from "./components/DataQuestionAssistant";
 
 export default function InfrastructureDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [datasetQuestions, setDatasetQuestions] = useState([]);
+  const [datasets, setDatasets] = useState([]);
   const allQuestions = useMemo(() => [...INFRASTRUCTURE_QUESTIONS, ...datasetQuestions], [datasetQuestions]);
   const visibleCategories = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase("id-ID");
@@ -20,7 +22,7 @@ export default function InfrastructureDashboardPage() {
   useEffect(() => {
     let active = true;
     const loadDatasetQuestions = () => fetchDatasetsMultiPage()
-      .then(({ rows }) => { if (active) setDatasetQuestions(createInfrastructureDatasetQuestions(rows.filter(isInfrastructureRelevant))); })
+      .then(({ rows }) => { if (active) { const themedDatasets = rows.filter(isInfrastructureRelevant); setDatasets(themedDatasets); setDatasetQuestions(createInfrastructureDatasetQuestions(themedDatasets)); } })
       .catch(error => console.warn("[Infrastructure Question Catalog] Gagal memuat pertanyaan dari dataset portal:", error.message));
     loadDatasetQuestions();
     const refreshId = window.setInterval(loadDatasetQuestions, CONFIG.pollingIntervalMs);
@@ -36,7 +38,7 @@ export default function InfrastructureDashboardPage() {
 
   return (
     <main className="agriculture-dashboard-page">
-      <a className="back-link" href="?">← Kembali ke beranda</a>
+      <a className="back-link" href="?"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke beranda</a>
       <section className="agriculture-dashboard-hero">
         <span>DASHBOARD PENDUKUNG KEPUTUSAN</span>
         <div className="agriculture-hero-title"><span className="agriculture-hero-icon"><Construction size={30} aria-hidden="true" /></span><h1>Dashboard Analisis Infrastruktur Aceh</h1></div>
@@ -44,6 +46,7 @@ export default function InfrastructureDashboardPage() {
         <QuestionSearch value={searchTerm} onChange={setSearchTerm} placeholder="Cari pertanyaan analisis infrastruktur, misalnya jalan..." />
       </section>
       <section className="question-catalog" aria-labelledby="infrastructure-question-catalog-title">
+        <DataQuestionAssistant datasets={datasets} themeLabel="infrastruktur" />
         <div className="question-catalog-heading"><div><span>PILIH KEBUTUHAN INFORMASI</span><h2 id="infrastructure-question-catalog-title">Apa yang ingin Anda ketahui?</h2></div><p>{searchTerm ? `${visibleCategories.reduce((total, category) => total + category.questions.length, 0)} pertanyaan ditemukan` : `${allQuestions.length} pertanyaan analisis tersedia.`}</p></div>
         {visibleCategories.length ? visibleCategories.map(category => <QuestionCategory key={category.id} category={category} questions={category.questions} onSelect={setSelectedQuestion} />) : <div className="question-empty-state"><h2>Pertanyaan tidak ditemukan</h2><p>Coba gunakan kata kunci lain, seperti “jalan”, “air minum”, atau “internet”.</p></div>}
       </section>

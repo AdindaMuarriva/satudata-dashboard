@@ -34,18 +34,20 @@ function getSocialCategory(dataset) {
 }
 
 export function createSocialDatasetQuestions(datasets = []) {
-  return datasets.map(dataset => {
+  return datasets.flatMap(dataset => {
     const title = String(dataset.judul || "Data sosial").replace(/\s+/g, " ").trim();
     const dashboardQuestion = String(dataset.dashboardQuestion || "").replace(/\s+/g, " ").trim();
-    return {
-      id: `social-dataset-${dataset.uuid}`,
+    const hasPeriod = /tahun|year|periode|tren|perkembangan/i.test(`${dataset.judul || ""} ${dataset.deskripsi || ""} ${dataset.dimensi || ""} ${dataset.pengukuran || ""}`);
+    const base = {
       category: getSocialCategory(dataset),
-      title: dashboardQuestion || `Bagaimana visualisasi ${title}?`,
-      description: dataset.dashboardQuestionDescription || dataset.deskripsi || `Menampilkan visualisasi ${title} berdasarkan data Portal Satu Data Aceh.`,
       keywords: (dashboardQuestion || title).split(/\s+/).filter(word => word.length > 2),
       datasetUuid: dataset.uuid,
-      expectedDatasetType: "dataset_sosial_portal",
-      recommendedChart: "Bar Chart"
+      expectedDatasetType: "dataset_sosial_portal"
     };
+    return [
+      { ...base, id: `social-dataset-${dataset.uuid}-overview`, title: dashboardQuestion || `Bagaimana visualisasi ${title}?`, description: dataset.dashboardQuestionDescription || dataset.deskripsi || `Menampilkan visualisasi ${title} berdasarkan data Portal Satu Data Aceh.`, recommendedChart: "Bar Chart" },
+      { ...base, id: `social-dataset-${dataset.uuid}-ranking`, title: `Wilayah atau kategori mana yang memiliki nilai tertinggi pada ${title}?`, description: `Menyusun peringkat berdasarkan data ${title}.`, recommendedChart: "Bar Chart" },
+      ...(hasPeriod ? [{ ...base, id: `social-dataset-${dataset.uuid}-trend`, title: `Bagaimana perkembangan ${title} antar periode?`, description: `Meninjau perubahan ${title} pada waktu yang tersedia.`, recommendedChart: "Line Chart" }] : [])
+    ];
   });
 }

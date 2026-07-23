@@ -1,7 +1,10 @@
 import * as d3 from "d3";
 
+const AI_BASE_URL = typeof import.meta.env === "undefined" ? "" : (import.meta.env.VITE_AI_BASE_URL || "");
+
 export const CONFIG = {
   baseUrl: "https://satudata-proxy.vercel.app",
+  aiBaseUrl: AI_BASE_URL,
   pollingIntervalMs: 30000,
   datasetPagesToFetch: 8,
   datasetPageSize: 100,
@@ -233,21 +236,13 @@ export function pickAggregator(meta) {
 }
 
 export async function fetchDatasetsMultiPage() {
-  const pages = [];
-  for (let p = 1; p <= CONFIG.datasetPagesToFetch; p++) {
-    pages.push(
-      fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=${p}`)
-        .catch(err => { console.warn(`Gagal ambil halaman ${p}:`, err.message); return null; })
-    );
-  }
-  const results = await Promise.all(pages);
-  let combined = [];
-  let apiTotalCount = 0;
-  results.forEach(r => {
-    if (!r) return;
-    combined = combined.concat(unwrapArray(r));
-    apiTotalCount = +pick(r, ["count"], apiTotalCount) || apiTotalCount;
-  });
+  const first = await fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=1`);
+  const apiTotalCount = Number(pick(first, ["count", "total"], 0)) || unwrapArray(first).length;
+  const pageCount = Math.max(1, Math.ceil(apiTotalCount / CONFIG.datasetPageSize));
+  const remainingPages = Array.from({ length: pageCount - 1 }, (_, index) => index + 2);
+  const remaining = await Promise.all(remainingPages.map(page => fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=${page}`)
+    .catch(error => { console.warn(`Gagal ambil halaman ${page}:`, error.message); return null; })));
+  const combined = [first, ...remaining].filter(Boolean).flatMap(unwrapArray);
 
   const localDatasets = getLocalDatasets();
   const deletedUuids = new Set(getDeletedDatasetUuids());
@@ -287,10 +282,33 @@ export async function fetchDatasetValues(uuid, tahun) {
     const years = [...new Set((dataset.csvRows || []).map(row => row.tahun).filter(Boolean))].map(year => ({ year }));
     return { rows, years };
   }
-  const path = `/api/datasets/${uuid}/datasources/json?tahun=${tahun}&limit=500&page=0&sortByColumn=&sortByType=`;
-  const json = await fetchJSON(path);
-  const years = (json.metadata && json.metadata.years) ? json.metadata.years.map(y => y.year) : [];
-  return { rows: unwrapArray(json), years };
+  const limit = 500;
+  const maxPages = 200;
+  const allRows = [];
+  let years = [];
+  for (let page = 0; page < maxPages; page += 1) {
+    const path = `/api/datasets/${uuid}/datasources/json?tahun=${encodeURIComponent(tahun || "")}&limit=${limit}&page=${page}&sortByColumn=&sortByType=`;
+    const json = await fetchJSON(path);
+    const pageRows = unwrapArray(json);
+    if (page === 0) years = (json.metadata && json.metadata.years) ? json.metadata.years.map(y => y.year) : [];
+    allRows.push(...pageRows);
+    const total = Number(json.count || json.total || json.metadata?.count);
+    if (!pageRows.length || pageRows.length < limit || (Number.isFinite(total) && allRows.length >= total)) break;
+  }
+  if (allRows.length >= limit * maxPages) console.warn(`Pengambilan data ${uuid} berhenti pada batas ${maxPages * limit} baris.`);
+  return { rows: allRows, years };
+}
+
+export async function requestAiExplanation(payload) {
+  if (!CONFIG.aiBaseUrl) return null;
+  const response = await fetch(`${CONFIG.aiBaseUrl.replace(/\/$/, "")}/ai/insight`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || `AI -> HTTP ${response.status}`);
+  const result = await response.json();
+  return typeof result.explanation === "string" ? result.explanation.trim() : null;
 }
 
 export async function fetchYearlyTrend(uuid, years, aggregator) {
