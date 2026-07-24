@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useRef } from "react";
 import { BarChart3, ChartNoAxesColumnIncreasing, Map, PieChart, TrendingUp } from "lucide-react";
 import { renderBarChart, renderDonutChart, renderRegionalChoropleth, renderTrendChart } from "../../charts";
-import { selectVisualization } from "../../analysis/visualizationEngine";
+import { selectVisualization, selectYearComparison } from "../../analysis/visualizationEngine";
 
 const TYPE_ICONS = { bar: BarChart3, line: TrendingUp, pie: PieChart, donut: PieChart, histogram: ChartNoAxesColumnIncreasing, map: Map };
 
-export default function VisualizationRenderer({ preprocessingResult, filters }) {
+export default function VisualizationRenderer({ preprocessingResult, filters, yearComparison = false }) {
   const containerRef = useRef(null);
   const trendRef = useRef(null);
   const mapRef = useRef(null);
   const chartFilters = useMemo(() => filters.visualization === "Peta Aceh" ? { ...filters, visualization: "Bar Chart" } : filters, [filters]);
-  const model = useMemo(() => selectVisualization(preprocessingResult, chartFilters), [preprocessingResult, chartFilters]);
-  const mapModel = useMemo(() => selectVisualization(preprocessingResult, { ...filters, visualization: "Peta Aceh" }), [preprocessingResult, filters]);
+  const model = useMemo(() => yearComparison ? selectYearComparison(preprocessingResult, filters) : selectVisualization(preprocessingResult, chartFilters), [preprocessingResult, chartFilters, filters, yearComparison]);
+  const mapModel = useMemo(() => yearComparison ? { status: "unavailable" } : selectVisualization(preprocessingResult, { ...filters, visualization: "Peta Aceh" }), [preprocessingResult, filters, yearComparison]);
 
   useEffect(() => {
     if (model.status !== "ready") return;
     const tooltip = document.querySelector(".tooltip");
     if (model.type === "bar" && containerRef.current) renderBarChart(containerRef.current, model.data, model.unit || model.valueColumn, tooltip);
     if ((model.type === "pie" || model.type === "donut") && containerRef.current) renderDonutChart(containerRef.current, model.data, tooltip, { donut: model.type === "donut", unit: model.unit });
-    if (model.type === "line" && trendRef.current) renderTrendChart(trendRef.current, model.data, model.unit || model.valueColumn, tooltip);
+    if (model.type === "line" && trendRef.current) renderTrendChart(trendRef.current, model.data, model.unit || model.valueColumn, tooltip, { highlightYears: model.highlightYears });
     if (mapModel.status === "ready" && mapModel.type === "map" && mapRef.current) renderRegionalChoropleth(mapRef.current, mapModel.data, mapModel.unit || mapModel.valueColumn, tooltip).catch(error => console.error("[Visualization] Gagal merender Peta Aceh:", error));
     console.log("[Visualization] Data dikirim ke renderer:", { type: model.type, sourceRows: model.sourceRowCount, renderedPoints: model.renderedDataCount });
   }, [model, mapModel]);

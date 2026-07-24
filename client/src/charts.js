@@ -132,7 +132,7 @@ export function renderBarChart(container, rows, satuan, tooltipEl) {
     .transition().duration(500).attr("width", d => x(d.value) - margin.left);
 }
 
-export function renderTrendChart(svgNode, data, satuan, tooltipEl) {
+export function renderTrendChart(svgNode, data, satuan, tooltipEl, { highlightYears = [] } = {}) {
   const svgEl = d3.select(svgNode);
   svgEl.selectAll("*").remove();
   const width = svgNode.parentElement.clientWidth || 800;
@@ -164,8 +164,9 @@ export function renderTrendChart(svgNode, data, satuan, tooltipEl) {
   const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
   g.append("path").datum(data).attr("class", "trend-line").attr("d", line);
 
+  const highlightedYears = new Set(highlightYears.map(Number));
   g.selectAll("circle").data(data).join("circle")
-    .attr("class", "trend-dot").attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", 4)
+    .attr("class", d => `trend-dot${highlightedYears.has(Number(d.year)) ? " trend-dot-highlighted" : ""}`).attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", d => highlightedYears.has(Number(d.year)) ? 6 : 4)
     .on("mousemove", (evt, d) => showTip(tooltipEl, `<b>${d.year}</b><br>${d3.format(",.2f")(d.value)} ${satuan || ""}`, evt))
     .on("mouseleave", () => hideTip(tooltipEl));
 }

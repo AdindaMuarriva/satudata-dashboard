@@ -21,6 +21,12 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
   const insight = useMemo(() => generateInsights(preprocessingResult, filters), [preprocessingResult, filters]);
   const chartModel = useMemo(() => selectVisualization(preprocessingResult, filters), [preprocessingResult, filters]);
   const explanation = useMemo(() => generateChartExplanation(preprocessingResult, filters, chartModel), [preprocessingResult, filters, chartModel]);
+  const datasetHasNoRows = pipelineStatus.visualization === "unavailable" && preprocessingResult && !preprocessingResult.cleanedData?.length;
+
+  if (datasetHasNoRows) {
+    return <p className="analysis-pipeline-message">Dataset ditemukan, tetapi belum memiliki baris data yang dapat dianalisis untuk periode yang tersedia.</p>;
+  }
+
   return (
     <>
       <section className="analysis-stage-grid" aria-label="Status proses analisis">
@@ -40,6 +46,11 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
         <div className="analysis-selection-summary" aria-live="polite"><span>{filters.year}</span><span>{filters.region}</span><span>{filters.commodity}</span><span>{filters.visualization}</span></div>
         {preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} /> : <div className="analysis-chart-skeleton" aria-label={`Placeholder ${filters.visualization}`}></div>}
       </section>
+
+      {preprocessingResult ? <section className="analysis-placeholder-panel year-comparison-panel" aria-live="polite">
+        <div className="placeholder-panel-heading"><TrendingUp size={23} aria-hidden="true" /><div><h2>Perbandingan Antar-Tahun</h2><p>Menampilkan seluruh tahun dalam rentang pembanding. Filter wilayah dan komoditas tetap diterapkan.</p></div></div>
+        <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} yearComparison />
+      </section> : null}
 
       {preprocessingResult ? <section className="analysis-placeholder-panel chart-explanation-panel" aria-live="polite">
         <div className="placeholder-panel-heading"><span className="insight-icon" role="img" aria-label="Penjelasan">💡</span><div><h2>{explanation.title}</h2><p>{explanation.guide}</p></div></div>

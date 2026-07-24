@@ -109,6 +109,67 @@ function createHistogram(rows, valueColumn) {
 }
 
 /**
+ * Builds a year-over-year model from every available row in the selected
+ * dataset. Region and commodity filters still apply, but the active year
+ * filter is deliberately ignored so this chart can compare periods.
+ */
+export function selectYearComparison(preprocessingResult, filters = {}) {
+  const structure = preprocessingResult?.datasetStructure;
+  const sourceRows = preprocessingResult?.cleanedData || [];
+  if (!structure || !sourceRows.length) {
+    return { status: "unavailable", message: "Data dataset belum tersedia untuk dibandingkan antar-tahun." };
+  }
+
+  if (!structure.columns.includes("tahun")) {
+    return { status: "unavailable", message: "Dataset ini tidak memiliki kolom tahun, sehingga perbandingan antar-tahun belum dapat dibuat." };
+  }
+
+  const rows = filterRows(sourceRows, { ...filters, year: "" });
+  const years = [...new Set(rows.map(row => String(row.tahun ?? "").match(/\b(19|20)\d{2}\b/)?.[0]).filter(Boolean))]
+    .sort((left, right) => Number(left) - Number(right));
+
+  if (years.length < 2) {
+    const year = years[0];
+    return {
+      status: "unavailable",
+      message: year
+        ? `Dataset ini hanya memiliki data pada tahun ${year}, sehingga perbandingan antar-tahun belum dapat dibuat.`
+        : "Dataset ini belum memiliki tahun yang valid untuk dibandingkan."
+    };
+  }
+
+  const rangeMatch = String(filters.comparisonYear || "").match(/^(\d{4})-(\d{4})$/);
+  const rangeYears = rangeMatch ? [rangeMatch[1], rangeMatch[2]] : [];
+
+  const valueColumn = structure.primaryValueColumn;
+  const data = valueColumn
+    ? aggregate(rows, "tahun", valueColumn)
+    : countBy(rows, "tahun");
+  const trendData = data
+    .map(item => ({ ...item, year: Number(item.label) }))
+    .filter(item => Number.isFinite(item.year))
+    .sort((left, right) => left.year - right.year);
+
+  if (trendData.length < 2) {
+    return { status: "unavailable", message: "Data per tahun belum cukup untuk dibuatkan perbandingan." };
+  }
+
+  return {
+    status: "ready",
+    type: "line",
+    title: valueColumn ? "Perbandingan Nilai Antar-Tahun" : "Perbandingan Jumlah Observasi Antar-Tahun",
+    data: trendData,
+    sourceRowCount: rows.length,
+    renderedDataCount: trendData.length,
+    unit: valueColumn ? datasetUnit(rows) : "observasi",
+    highlightYears: [...new Set([filters.year, ...rangeYears].filter(Boolean).map(Number))],
+    notice: rangeYears.length
+      ? `Seluruh tahun tersedia ditampilkan dalam rentang ${rangeYears[0]}–${rangeYears[1]}.`
+      : "Grafik ini memakai seluruh tahun yang tersedia pada dataset dan otomatis diperbarui saat data baru ditambahkan."
+  };
+}
+
+/**
  * Maps a preprocessed dataset to a small, renderer-neutral visualization model.
  */
 export function selectVisualization(preprocessingResult, filters = {}) {
