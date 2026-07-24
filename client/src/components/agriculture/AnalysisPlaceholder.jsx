@@ -13,7 +13,7 @@ const STAGES = [
 const VISUALIZATION_ICONS = { "Bar Chart": BarChart3, "Line Chart": TrendingUp, "Pie Chart": PieChart, "Donut Chart": PieChart, Histogram: ChartNoAxesColumnIncreasing };
 
 function statusLabel(status) {
-  return { loading: "Memuat", success: "Selesai", error: "Gagal", idle: "Menunggu" }[status] || "Menunggu";
+  return { loading: "Memuat", success: "Selesai", error: "Gagal", unavailable: "Tidak ada data", idle: "Menunggu" }[status] || "Menunggu";
 }
 
 export default function AnalysisPlaceholder({ filters, selectedDataset, matchResult, preprocessingResult, pipelineStatus, pipelineError, pipelineNotice }) {

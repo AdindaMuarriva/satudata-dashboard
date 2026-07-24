@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, LayoutDashboard } from "lucide-react";
-import { CONFIG, fetchDatasetsMultiPage } from "./api";
+import { CONFIG, fetchDatasetsMultiPage, getCachedDatasetCatalog } from "./api";
 import DataQuestionAssistant from "./components/DataQuestionAssistant";
 import QuestionCategory from "./components/agriculture/QuestionCategory";
 import QuestionDetail from "./components/agriculture/QuestionDetail";
@@ -36,7 +36,10 @@ function createDatasetQuestions(datasets, themeLabel) {
 export default function GenericQuestionDashboard({ themeLabel, title, filterDataset, analysisLabel }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [datasets, setDatasets] = useState([]);
+  const [datasets, setDatasets] = useState(() => {
+    const cached = getCachedDatasetCatalog();
+    return cached ? cached.rows.filter(filterDataset) : [];
+  });
 
   useEffect(() => {
     let active = true;

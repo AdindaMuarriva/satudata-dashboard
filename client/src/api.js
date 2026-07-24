@@ -17,6 +17,39 @@ export const CONFIG = {
   }
 };
 
+// The dashboard repeatedly uses the same catalog to match a question with a
+// dataset. Keep it briefly so changing a filter does not reload the catalog.
+const DATASET_CATALOG_CACHE_MS = 30_000;
+const DATASET_CATALOG_STORAGE_KEY = "satudata_dataset_catalog_cache";
+let datasetCatalogCache = null;
+let datasetCatalogRequest = null;
+
+function readStoredDatasetCatalog() {
+  if (datasetCatalogCache || typeof window === "undefined") return datasetCatalogCache;
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(DATASET_CATALOG_STORAGE_KEY) || "null");
+    if (stored?.value && Array.isArray(stored.value.rows)) datasetCatalogCache = stored;
+  } catch {
+    // A missing or invalid browser cache should never prevent the API request.
+  }
+  return datasetCatalogCache;
+}
+
+function storeDatasetCatalog(value) {
+  datasetCatalogCache = { value, loadedAt: Date.now() };
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(DATASET_CATALOG_STORAGE_KEY, JSON.stringify(datasetCatalogCache));
+  } catch {
+    // The in-memory cache still improves navigation if browser storage is full.
+  }
+}
+
+// Lets dashboard pages paint their last catalog immediately, then refresh it.
+export function getCachedDatasetCatalog() {
+  return readStoredDatasetCatalog()?.value || null;
+}
+
 export const THEME_KEYWORDS = [
   "sosial", "kependudukan", "perempuan", "anak", "disabilitas", "lansia",
   "kemiskinan", "bansos", "pkh", "akta", "kia", "ktp", "kk", "yatim",
@@ -236,9 +269,18 @@ export function pickAggregator(meta) {
 }
 
 export async function fetchDatasetsMultiPage() {
+  readStoredDatasetCatalog();
+  if (datasetCatalogCache && Date.now() - datasetCatalogCache.loadedAt < DATASET_CATALOG_CACHE_MS) {
+    return datasetCatalogCache.value;
+  }
+  if (datasetCatalogRequest) return datasetCatalogRequest;
+
+  datasetCatalogRequest = (async () => {
   const first = await fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=1`);
   const apiTotalCount = Number(pick(first, ["count", "total"], 0)) || unwrapArray(first).length;
-  const pageCount = Math.max(1, Math.ceil(apiTotalCount / CONFIG.datasetPageSize));
+  // Do not accidentally request every catalog page. The configured limit keeps
+  // matching responsive while still providing a representative catalog.
+  const pageCount = Math.min(CONFIG.datasetPagesToFetch, Math.max(1, Math.ceil(apiTotalCount / CONFIG.datasetPageSize)));
   const remainingPages = Array.from({ length: pageCount - 1 }, (_, index) => index + 2);
   const remaining = await Promise.all(remainingPages.map(page => fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=${page}`)
     .catch(error => { console.warn(`Gagal ambil halaman ${page}:`, error.message); return null; })));
@@ -263,7 +305,16 @@ export async function fetchDatasetsMultiPage() {
 
   const totalCount = (apiTotalCount || combined.length) + localDatasets.length - remoteDeletedCount;
 
-  return { rows: all, totalCount };
+  const value = { rows: all, totalCount };
+  storeDatasetCatalog(value);
+  return value;
+  })();
+
+  try {
+    return await datasetCatalogRequest;
+  } finally {
+    datasetCatalogRequest = null;
+  }
 }
 
 export async function fetchDatasetMeta(uuid) {

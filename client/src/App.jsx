@@ -15,7 +15,7 @@ import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
 import { supabase } from "./lib/supabase";
 import { createActivityLog } from "./api/activity";
-import { isEducationRelevant, isEnvironmentRelevant, isHealthRelevant, isStatisticsRelevant, isThemeRelevant } from "./api";
+import { fetchDatasetsMultiPage, isEducationRelevant, isEnvironmentRelevant, isHealthRelevant, isStatisticsRelevant, isThemeRelevant } from "./api";
 
 // Baca sesi admin langsung (tanpa mount AuthGate) — cuma dipakai buat
 // nampilin bar kecil "Login sebagai admin" pas admin lagi liat-liat
@@ -48,6 +48,11 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Start loading the shared catalog before a visitor opens a dashboard.
+  useEffect(() => {
+    void fetchDatasetsMultiPage().catch(() => {});
   }, []);
   const params = new URLSearchParams(window.location.search);
   const uuid = params.get("dataset");

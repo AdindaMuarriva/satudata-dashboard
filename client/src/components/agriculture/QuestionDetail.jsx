@@ -61,7 +61,17 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
           return;
         }
         if (!response.rows.length) response = await fetchDatasetValues(datasetId, "");
-        if (!response.rows.length) throw new Error("Dataset ditemukan, tetapi belum memiliki baris data yang dapat dianalisis.");
+        if (!response.rows.length) {
+          // Some portal datasets have metadata but no datasource rows. This is
+          // not a preprocessing failure: keep the pipeline usable and show a
+          // precise empty-data message in the visualization area.
+          const processed = preprocessDataset([]);
+          if (!active) return;
+          setPipelineNotice("Dataset ditemukan, tetapi belum memiliki baris data yang dapat dianalisis untuk periode yang tersedia.");
+          setPreprocessingResult(processed);
+          setPipelineStatus({ dataset: "success", preprocessing: "success", visualization: "unavailable" });
+          return;
+        }
 
         const rowYears = yearsFromRows(response.rows);
         if (rowYears.length) setAvailableYears(current => normalizeYears([...current, ...rowYears]));
