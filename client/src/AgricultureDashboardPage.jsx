@@ -56,7 +56,7 @@ export default function AgricultureDashboardPage() {
         <QuestionSearch value={searchTerm} onChange={setSearchTerm} />
       </section>
       <section className="question-catalog" aria-labelledby="question-catalog-title">
-        <DataQuestionAssistant datasets={datasets} themeLabel="pertanian" />
+        {!searchTerm.trim() && <DataQuestionAssistant datasets={datasets} themeLabel="pertanian" />}
         <div className="question-catalog-heading"><div><span>PILIH KEBUTUHAN INFORMASI</span><h2 id="question-catalog-title">Apa yang ingin Anda ketahui?</h2></div><p>{searchTerm ? `${visibleCategories.reduce((total, category) => total + category.questions.length, 0)} pertanyaan ditemukan` : `${allQuestions.length} pertanyaan analisis tersedia.`}</p></div>
         {visibleCategories.length ? visibleCategories.map(category => <QuestionCategory key={category.id} category={category} questions={category.questions} onSelect={setSelectedQuestion} />) : <div className="question-empty-state"><h2>Pertanyaan tidak ditemukan</h2><p>Coba gunakan kata kunci lain, seperti “padi”, “lahan”, atau “irigasi”.</p></div>}
       </section>

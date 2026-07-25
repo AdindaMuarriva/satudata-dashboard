@@ -70,7 +70,7 @@ export default function GenericQuestionDashboard({ themeLabel, title, filterData
       <QuestionSearch value={searchTerm} onChange={setSearchTerm} placeholder={`Cari pertanyaan atau dataset ${themeLabel}...`} />
     </section>
     <section className="question-catalog" aria-labelledby="question-catalog-title">
-      <DataQuestionAssistant datasets={datasets} themeLabel={themeLabel} />
+      {!searchTerm.trim() && <DataQuestionAssistant datasets={datasets} themeLabel={themeLabel} />}
       <div className="question-catalog-heading"><div><span>PILIH KEBUTUHAN INFORMASI</span><h2 id="question-catalog-title">Apa yang ingin Anda ketahui?</h2></div><p>{searchTerm ? `${categories.reduce((total, category) => total + category.questions.length, 0)} pertanyaan ditemukan` : `${questions.length} pertanyaan analisis dari ${datasets.length} dataset tersedia.`}</p></div>
       {categories.length ? categories.map(category => <QuestionCategory key={category.id} category={category} questions={category.questions} onSelect={setSelectedQuestion} />) : <div className="question-empty-state"><h2>Pertanyaan tidak ditemukan</h2><p>Coba kata kunci lain atau tunggu dataset tema ini selesai dimuat.</p></div>}
     </section>

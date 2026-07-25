@@ -120,13 +120,12 @@ export default function ListPage({ tooltipRef }) {
   const [org, setOrg] = useState("__all__"); 
 
   const orgChartRef = useRef(null);
+  const datasetCatalogRef = useRef(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
 
   function handleSearchSubmit(event) {
     event.preventDefault();
-    const query = search.trim();
-    const searchUrl = query ? `?page=search&query=${encodeURIComponent(query)}` : "?page=search";
-    window.location.href = searchUrl;
+    datasetCatalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handleAdminLogin() {
@@ -242,9 +241,35 @@ export default function ListPage({ tooltipRef }) {
             <p>Akses dataset, dashboard, infografik, dan produk statistik resmi dari berbagai instansi di Aceh.</p>
 
             <form className="hero-search" onSubmit={handleSearchSubmit}>
-              <input id="searchInput" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari Data Statistik..." />
+              <input id="searchInput" type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari Data Statistik..." aria-label="Cari dataset" />
               <button type="submit">Cari</button>
             </form>
+
+            {search.trim() && (
+              <div className="hero-search-results" aria-live="polite">
+                <div className="hero-search-results-head">
+                  <strong>Dataset ditemukan</strong>
+                  <span>{dashboardLoading ? "Memuat..." : `${filtered.length} hasil`}</span>
+                </div>
+                {dashboardLoading ? (
+                  <p>Menyiapkan katalog dataset...</p>
+                ) : filtered.length ? (
+                  <ul>
+                    {filtered.slice(0, 5).map(dataset => (
+                      <li key={dataset.uuid}>
+                        <a href={`?dataset=${dataset.uuid}`}>
+                          <strong>{dataset.judul || "Tanpa judul"}</strong>
+                          <span>{dataset.organisasi?.nama || "Tanpa OPD"}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Dataset dengan kata kunci tersebut belum ditemukan.</p>
+                )}
+                {filtered.length > 5 && <button type="button" onClick={() => datasetCatalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>Lihat semua hasil di katalog</button>}
+              </div>
+            )}
 
             <div className="hero-summary-cards">
               <div className="hero-summary-card">
@@ -339,7 +364,7 @@ export default function ListPage({ tooltipRef }) {
       </section>
 
 
-      <div className="grid" id="datasets">
+      <div className="grid" id="datasets" ref={datasetCatalogRef}>
         <div className="panel wide">
           <h2>Katalog Dataset Terintegrasi</h2>
           <div className="sub">Klik judul dataset untuk membuka visualisasinya di halaman tersendiri.</div>
