@@ -13,6 +13,22 @@ export const DATASET_MATCH_WEIGHTS = {
 
 export const DEFAULT_MINIMUM_SCORE = 15;
 
+// Padanan kecil ini membuat pertanyaan alami seperti "berapa warga miskin"
+// tetap dapat menemukan metadata yang memakai istilah "kemiskinan". Ini bukan
+// pengganti pencarian semantik, tetapi aman dijalankan di browser dan mudah
+// diaudit karena setiap padanan terlihat jelas di sini.
+const TERM_ALIASES = [
+  ["miskin", "kemiskinan", "prasejahtera"],
+  ["penduduk", "populasi", "warga", "jiwa"],
+  ["kesehatan", "medis", "sanitas", "stunting"],
+  ["pendidikan", "sekolah", "murid", "siswa", "guru"],
+  ["pertanian", "tanaman", "panen", "padi", "komoditas"],
+  ["jalan", "infrastruktur", "transportasi"],
+  ["air", "minum", "sanitasi"],
+  ["pengangguran", "tenaga kerja", "ketenagakerjaan"]
+];
+const QUERY_STOP_WORDS = new Set(["apa", "apakah", "bagaimana", "berapa", "yang", "dan", "atau", "dari", "untuk", "dengan", "pada", "tahun", "data", "saya", "tolong", "tampilkan", "informasi", "tentang", "aceh"]);
+
 function normalizeText(value) {
   if (Array.isArray(value)) return value.map(normalizeText).filter(Boolean).join(" ");
   return String(value || "")
@@ -27,9 +43,23 @@ function normalizeKeywords(keywords) {
   return [...new Set(keywords.map(normalizeText).filter(Boolean))];
 }
 
+function tokens(value) {
+  return normalizeText(value).split(" ").filter(Boolean);
+}
+
+function aliasesFor(term) {
+  return TERM_ALIASES.find(group => group.includes(term)) || [term];
+}
+
+function keywordMatches(keyword, sourceText, sourceTokens) {
+  if (keyword.includes(" ")) return sourceText.includes(keyword);
+  return aliasesFor(keyword).some(term => sourceTokens.has(term));
+}
+
 function keywordCoverage(keywords, sourceText) {
   if (!keywords.length || !sourceText) return 0;
-  return keywords.filter(keyword => sourceText.includes(keyword)).length / keywords.length;
+  const sourceTokens = new Set(tokens(sourceText));
+  return keywords.filter(keyword => keywordMatches(keyword, sourceText, sourceTokens)).length / keywords.length;
 }
 
 function datasetTypeCoverage(expectedDatasetType, dataset) {
@@ -53,7 +83,14 @@ function datasetTypeCoverage(expectedDatasetType, dataset) {
  * or Portal Satu Data-style aliases (judul, deskripsi, topik).
  */
 export function scoreDataset(question, dataset) {
-  const keywords = normalizeKeywords(question?.keywords);
+  // `query`/`title` allows callers to submit one complete sentence, while
+  // `keywords` keeps compatibility with the dashboard question catalog.
+  const suppliedKeywords = normalizeKeywords(question?.keywords);
+  const queryTerms = tokens(question?.query || question?.title)
+    .filter(term => term.length > 2 && !QUERY_STOP_WORDS.has(term));
+  // If a caller has already extracted terms, preserve that intentional query
+  // instead of diluting the relevance score with words from the sentence.
+  const keywords = suppliedKeywords.length ? suppliedKeywords : normalizeKeywords(queryTerms);
   const title = normalizeText(dataset?.title || dataset?.judul);
   const description = normalizeText(dataset?.description || dataset?.deskripsi);
   const tags = normalizeText(

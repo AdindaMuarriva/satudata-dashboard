@@ -4,6 +4,7 @@ import DetailPage from "./Detailpage";
 import OrgPage from "./OrgPage";
 import AllOrgsPage from "./AllOrgsPage";
 import TopicPage from "./TopicPage";
+import FieldPage from "./FieldPage";
 import FeaturePage from "./FeaturePage";
 import SearchResultsPage from "./SearchResultsPage";
 import ComparePage from "./ComparePage";
@@ -62,6 +63,7 @@ export default function App() {
   const feature = params.get("feature");
   const query = params.get("query");
   const datasets = params.get("datasets");
+  const isLandingPage = !uuid && !org && !page;
 
   const isAdminRoute = page === "admin" || params.get("admin") === "1";
 
@@ -83,6 +85,8 @@ export default function App() {
     <AllOrgsPage />
   ) : page === "topic" ? (
     <TopicPage topicName={topic || "Semua"} />
+  ) : page === "field" ? (
+    <FieldPage />
   ) : page === "feature" ? (
     <FeaturePage featureName={feature || "Dataset"} />
   ) : page === "search" ? (
@@ -123,7 +127,7 @@ export default function App() {
   }
 
   return (
-    <div className="wrap">
+    <div className={`wrap${isLandingPage ? " landing-shell" : ""}`}>
       {authNotice && <div className="auth-toast" role="status">{authNotice}</div>}
       {adminSession && (
         <div className="admin-bar">

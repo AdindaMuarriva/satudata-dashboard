@@ -207,13 +207,15 @@ export async function renderChoroplethMap(container, rows, satuan, color, toolti
 
   sel.html("");
   const width = container.clientWidth || 800;
-  const height = 520;
+  const height = 560;
   const svg = sel.append("svg").attr("width", "100%").attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
 
   const featureCollection = { type: "FeatureCollection", features };
   const projection = d3.geoMercator();
   const path = d3.geoPath().projection(projection);
-  projection.fitSize([width, height - 40], featureCollection);
+  // Sisakan ruang untuk legenda agar skala warna selalu terbaca tanpa
+  // mengurangi ukuran peta secara berlebihan.
+  projection.fitSize([width - 42, height - 92], featureCollection);
 
   svg.selectAll("path").data(features).join("path")
     .attr("class", "map-region")
@@ -229,6 +231,22 @@ export async function renderChoroplethMap(container, rows, satuan, color, toolti
       showTip(tooltipEl, `<b>${f.properties.kabkot || f.properties.name}</b><br>${v !== undefined ? d3.format(",.2f")(v) + " " + (satuan || "") : "Tidak ada data"}`, evt);
     })
     .on("mouseleave", () => hideTip(tooltipEl));
+
+  const [min, max] = color.domain();
+  const legendWidth = Math.min(250, Math.max(160, width * 0.3));
+  const legend = svg.append("g").attr("class", "choropleth-legend").attr("transform", `translate(22,${height - 54})`);
+  const gradientId = `aceh-scale-${Math.random().toString(36).slice(2, 9)}`;
+  const gradient = svg.append("defs").append("linearGradient").attr("id", gradientId);
+  d3.range(0, 1.01, 0.1).forEach(step => gradient.append("stop")
+    .attr("offset", `${step * 100}%`).attr("stop-color", color(min + (max - min) * step)));
+  legend.append("text").attr("class", "choropleth-legend-title").attr("y", -7)
+    .text(satuan ? `Skala nilai (${satuan})` : "Skala nilai");
+  legend.append("rect").attr("width", legendWidth).attr("height", 12).attr("rx", 6).attr("fill", `url(#${gradientId})`);
+  const legendScale = d3.scaleLinear().domain([min, max]).range([0, legendWidth]);
+  legend.append("g").attr("class", "choropleth-legend-axis").attr("transform", "translate(0,12)")
+    .call(d3.axisBottom(legendScale).ticks(3).tickFormat(formatAxisNumber));
+  legend.append("text").attr("class", "choropleth-no-data").attr("x", legendWidth + 14).attr("y", 10)
+    .text("Abu-abu: belum ada data");
 }
 
 export async function renderRegionalChoropleth(container, rows, satuan, tooltipEl) {

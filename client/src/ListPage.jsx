@@ -213,16 +213,21 @@ export default function ListPage({ tooltipRef }) {
 
   return (
     <div id="listView">
+      <div className="government-topline">
+      </div>
       <section className="hero">
         <div className="hero-head">
-          <div className="brand">Satu Data Aceh</div>
+          <div className="brand">
+            <span className="brand-mark"><Landmark size={27} aria-hidden="true" /></span>
+            <span><small></small>Satu Data Aceh</span>
+          </div>
           <nav className="hero-nav">
             <a href="?#datasets">Dataset</a>
             <a href={`?page=feature&feature=${encodeURIComponent("Dokumen Geospasial")}`}>Mapset</a>
             <a href={`?page=feature&feature=${encodeURIComponent("Dataset")}`}>Pemanfaatan Data</a>
             <a href="?#instansi">Instansi</a>
             <a href="?page=topic&topic=Semua">Group</a>
-            <a href="?page=all-orgs">Bidang Urusan</a>
+            <a href="?page=field">Bidang Urusan</a>
           </nav>
           <button type="button" className="hero-login" onClick={handleAdminLogin}>Login</button>
         </div>
@@ -236,9 +241,9 @@ export default function ListPage({ tooltipRef }) {
 
         <div className="hero-grid">
           <div className="hero-copy">
-            <span className="hero-eyebrow">PORTAL DATA PEMERINTAH ACEH</span>
-            <h1>Menuju Pemerintahan Berbasis Data</h1>
-            <p>Akses dataset, dashboard, infografik, dan produk statistik resmi dari berbagai instansi di Aceh.</p>
+            <span className="hero-eyebrow"></span>
+            <h1>Data Terbuka untuk Aceh yang Lebih Terukur</h1>
+            <p>Akses satu pintu untuk dataset, dashboard, infografik, dan produk statistik resmi dari perangkat daerah Aceh.</p>
 
             <form className="hero-search" onSubmit={handleSearchSubmit}>
               <input id="searchInput" type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari Data Statistik..." aria-label="Cari dataset" />
@@ -298,8 +303,9 @@ export default function ListPage({ tooltipRef }) {
 
           <div className="hero-panel">
             <div className="hero-panel-card">
-              <div className="hero-panel-title">Informasi terbaru dan terverifikasi</div>
-              <div className="hero-panel-sub">Data resmi Aceh dari berbagai OPD dapat diakses melalui portal ini.</div>
+              <div className="hero-panel-flag">LAYANAN DATA PUBLIK</div>
+              <div className="hero-panel-title">Informasi resmi, terbuka, dan dapat digunakan kembali</div>
+              <div className="hero-panel-sub">Data dihimpun dari perangkat daerah untuk mendukung pelayanan publik, perencanaan, dan pengambilan keputusan.</div>
             </div>
             <div className="hero-dashboard-switcher" id="dashboards">
               <div className="hero-panel-card featured">
