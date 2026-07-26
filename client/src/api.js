@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getDatasetVisibility } from "./api/datasetVisibility.js";
 
 const AI_BASE_URL = typeof import.meta.env === "undefined" ? "" : (import.meta.env.VITE_AI_BASE_URL || "");
 
@@ -47,7 +48,16 @@ function storeDatasetCatalog(value) {
 
 // Lets dashboard pages paint their last catalog immediately, then refresh it.
 export function getCachedDatasetCatalog() {
-  return readStoredDatasetCatalog()?.value || null;
+  // Katalog mentah sengaja tidak dipakai untuk render awal. Status visibilitas
+  // bersifat global dan asinkron; memakai cache mentah bisa membuat dataset
+  // yang baru dinonaktifkan muncul sesaat sebelum filter diterapkan.
+  return null;
+}
+
+export function invalidateDatasetCatalog() {
+  datasetCatalogCache = null;
+  datasetCatalogRequest = null;
+  if (typeof window !== "undefined") window.sessionStorage.removeItem(DATASET_CATALOG_STORAGE_KEY);
 }
 
 export const THEME_KEYWORDS = [
@@ -268,12 +278,15 @@ export function pickAggregator(meta) {
   return avgKeywords.some(k => text.includes(k)) ? "avg" : "sum";
 }
 
-export async function fetchDatasetsMultiPage() {
+export async function fetchDatasetsMultiPage({ includeHidden = false } = {}) {
   readStoredDatasetCatalog();
   if (datasetCatalogCache && Date.now() - datasetCatalogCache.loadedAt < DATASET_CATALOG_CACHE_MS) {
-    return datasetCatalogCache.value;
+    return applyDatasetVisibility(datasetCatalogCache.value, includeHidden);
   }
-  if (datasetCatalogRequest) return datasetCatalogRequest;
+  if (datasetCatalogRequest) {
+    const catalog = await datasetCatalogRequest;
+    return applyDatasetVisibility(catalog, includeHidden);
+  }
 
   datasetCatalogRequest = (async () => {
   const first = await fetchJSON(`/api/datasets?limit=${CONFIG.datasetPageSize}&page=1`);
@@ -301,20 +314,41 @@ export async function fetchDatasetsMultiPage() {
       return { ...d, ...overrides[d.uuid] };
     }
     return d;
-  }).filter(d => !deletedUuids.has(d.uuid));
+  });
 
   const totalCount = (apiTotalCount || combined.length) + localDatasets.length - remoteDeletedCount;
 
-  const value = { rows: all, totalCount };
+  const value = { rows: all, totalCount, legacyDeletedUuids: [...deletedUuids] };
   storeDatasetCatalog(value);
   return value;
   })();
 
   try {
-    return await datasetCatalogRequest;
+    const catalog = await datasetCatalogRequest;
+    return await applyDatasetVisibility(catalog, includeHidden);
   } finally {
     datasetCatalogRequest = null;
   }
+}
+
+async function applyDatasetVisibility(catalog, includeHidden) {
+  const visibility = await getDatasetVisibility();
+  const legacyDeletedUuids = new Set(catalog.legacyDeletedUuids || []);
+  const rowsWithStatus = catalog.rows.map((dataset) => {
+    const status = visibility.get(String(dataset.uuid || dataset.id));
+    return status ? { ...dataset, ...status } : dataset;
+  });
+
+  if (includeHidden) return { ...catalog, rows: rowsWithStatus };
+
+  const rows = rowsWithStatus.filter((dataset) => {
+    const id = String(dataset.uuid || dataset.id);
+    return !legacyDeletedUuids.has(id)
+      && dataset.is_active !== false
+      && !dataset.deleted_at
+      && !dataset.permanently_deleted;
+  });
+  return { ...catalog, rows, totalCount: Math.max(0, catalog.totalCount - (rowsWithStatus.length - rows.length)) };
 }
 
 export async function fetchDatasetMeta(uuid) {

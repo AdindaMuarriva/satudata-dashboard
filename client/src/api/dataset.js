@@ -4,9 +4,11 @@ import {
   fetchDatasetValues,
   fetchDatasetsMultiPage,
   getLocalDatasets,
+  invalidateDatasetCatalog,
   saveDatasetChanges,
   saveLocalDataset,
 } from "../api";
+import { saveDatasetVisibility } from "./datasetVisibility";
 
 const TRASH_DATASETS_KEY = "satudata_trashed_datasets";
 
@@ -41,7 +43,7 @@ export function getDatasetStatus(dataset) {
 
 // Returns all portal datasets combined with locally created and edited datasets.
 export async function getDatasets() {
-  const { rows, totalCount } = await fetchDatasetsMultiPage();
+  const { rows, totalCount } = await fetchDatasetsMultiPage({ includeHidden: true });
   const activeRows = rows.filter((dataset) => !isTrashed(dataset));
   return { rows: activeRows, totalCount: Math.max(0, totalCount - (rows.length - activeRows.length)) };
 }
@@ -52,9 +54,10 @@ export async function getTrashDatasets() {
     .filter((dataset) => dataset.deleted_at)
     .map((dataset) => ({ ...dataset, trashed_at: dataset.deleted_at }));
   const localIds = new Set(localTrash.map(getDatasetId));
-  const remoteTrash = getTrashedRecords()
-    .filter((record) => !localIds.has(record.id))
-    .map((record) => ({ ...record.dataset, trashed_at: record.trashed_at }));
+  const { rows } = await fetchDatasetsMultiPage({ includeHidden: true });
+  const remoteTrash = rows
+    .filter((dataset) => dataset.deleted_at && !dataset.permanently_deleted && !localIds.has(getDatasetId(dataset)))
+    .map((dataset) => ({ ...dataset, trashed_at: dataset.deleted_at }));
 
   return [...localTrash, ...remoteTrash].sort(
     (a, b) => new Date(b.trashed_at) - new Date(a.trashed_at)
@@ -84,7 +87,13 @@ export async function updateDataset(id, changes) {
 
 // Changes an active dataset status without removing it from the active list.
 export async function setDatasetActive(id, isActive) {
-  saveDatasetChanges(id, { is_active: isActive });
+  if (String(id).startsWith("local-")) {
+    saveDatasetChanges(id, { is_active: isActive });
+    return;
+  }
+  await saveDatasetVisibility(id, { is_active: isActive });
+  invalidateDatasetCatalog();
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
 }
 
 // Soft-deletes a dataset so it can be restored from the trash page.
@@ -96,10 +105,9 @@ export async function moveDatasetToTrash(dataset) {
     saveDatasetChanges(id, { deleted_at: trashedAt });
     return;
   }
-
-  const records = getTrashedRecords().filter((record) => record.id !== id);
-  records.push({ id, dataset, trashed_at: trashedAt, previous_status: getDatasetStatus(dataset) });
-  saveTrashedRecords(records);
+  await saveDatasetVisibility(id, { deleted_at: trashedAt, permanently_deleted: false });
+  invalidateDatasetCatalog();
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
 }
 
 // Restores a soft-deleted dataset and preserves its previous active status.
@@ -110,12 +118,18 @@ export async function restoreDataset(dataset) {
     saveDatasetChanges(id, { deleted_at: null });
     return;
   }
-
-  saveTrashedRecords(getTrashedRecords().filter((record) => record.id !== id));
+  await saveDatasetVisibility(id, { deleted_at: null, permanently_deleted: false });
+  invalidateDatasetCatalog();
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
 }
 
 // Permanently removes a dataset only after it has been placed in the trash.
 export async function deleteDataset(id) {
-  saveTrashedRecords(getTrashedRecords().filter((record) => record.id !== id));
-  deleteStoredDataset(id);
+  if (String(id).startsWith("local-")) {
+    deleteStoredDataset(id);
+    return;
+  }
+  await saveDatasetVisibility(id, { deleted_at: new Date().toISOString(), permanently_deleted: true });
+  invalidateDatasetCatalog();
+  window.dispatchEvent(new Event("satudata-local-datasets-updated"));
 }
