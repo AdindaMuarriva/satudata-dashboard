@@ -1,29 +1,39 @@
-# Dependencies
+# Dependencies and build output
 node_modules/
+client/node_modules/
+dist/
+client/dist/
+coverage/
 
-# Environment variables
+# Local environment files and secrets
 .env
-.env.local
+.env.*
+!.env.example
+!.env.*.example
+client/.env
+client/.env.*
+!client/.env.example
+!client/.env.*.example
 
-# Logs
+# Logs and temporary files
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# VS Code
-.vscode/
-
-# Vercel
-.vercel/
-
-# Temporary files
+pnpm-debug.log*
 *.tmp
 *.temp
+
+# Local tooling state
+.supabase/
+.vercel/
+.vite/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
 
 client/node_modules/
 client/dist/

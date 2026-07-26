@@ -120,10 +120,6 @@ export default function AdminPage({ user, onLogout }) {
       <aside className="admin-sidebar">
 
         <div className="sidebar-brand">
-          <img
-            src="/logo-aceh.png"
-            alt="Logo"
-          />
           <div>
             <h3>SatuData</h3>
             <span>Admin Panel</span>
@@ -273,7 +269,15 @@ export default function AdminPage({ user, onLogout }) {
         {activePage === "import-csv" && <AddDatasetPage mode="csv" onBack={() => setActivePage("dashboard")} onSaved={handleDatasetSaved} />}
         {activePage === "opd" && <OPDPage />}
         {activePage === "user" && <UserPage />}
-        {activePage === "settings" && <SettingPage />}
+        {activePage === "settings" && (
+          <SettingPage
+            user={user}
+            onAccountDeleted={() => {
+              window.sessionStorage.setItem("satudata_auth_notice", "Akun admin berhasil dihapus.");
+              window.location.assign(window.location.pathname);
+            }}
+          />
+        )}
 
       </main>
 

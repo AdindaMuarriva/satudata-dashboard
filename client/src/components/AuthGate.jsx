@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { createActivityLog } from "../api/activity";
 
@@ -13,9 +14,22 @@ function toAdminUser(user) {
   };
 }
 
+function SecretInput({ value, onChange, placeholder, name }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <input name={name} type={isVisible ? "text" : "password"} value={value} onChange={onChange} placeholder={placeholder} style={{ paddingRight: 46 }} />
+      <button type="button" onClick={() => setIsVisible((current) => !current)} aria-label={isVisible ? "Sembunyikan isi" : "Tampilkan isi"} title={isVisible ? "Sembunyikan isi" : "Tampilkan isi"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", display: "flex", border: 0, padding: 4, background: "transparent", color: "#6b7280", cursor: "pointer" }}>
+        {isVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+  );
+}
+
 export default function AuthGate({ children }) {
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ fullName: "", email: "", password: "", confirmPassword: "", adminCode: "" });
   const [notice, setNotice] = useState("");
   const [sessionUser, setSessionUser] = useState(null);
   const [isReady, setIsReady] = useState(false);
@@ -79,8 +93,9 @@ export default function AuthGate({ children }) {
     const email = form.email.trim().toLowerCase();
     const password = form.password;
     const confirmPassword = form.confirmPassword;
+    const adminCode = form.adminCode;
 
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!fullName || !email || !password || !confirmPassword || !adminCode) {
       setNotice("Semua kolom wajib diisi.");
       return;
     }
@@ -92,6 +107,22 @@ export default function AuthGate({ children }) {
 
     if (password !== confirmPassword) {
       setNotice("Konfirmasi password tidak cocok.");
+      return;
+    }
+
+    const { data: settings, error: settingsError } = await supabase
+      .from("admin_settings")
+      .select("admin_code")
+      .eq("id", 1)
+      .single();
+
+    if (settingsError) {
+      setNotice("Tidak dapat memverifikasi kode admin. Silakan coba lagi.");
+      return;
+    }
+
+    if (adminCode !== settings.admin_code) {
+      setNotice("Kode Admin tidak valid.");
       return;
     }
 
@@ -123,7 +154,7 @@ export default function AuthGate({ children }) {
       return;
     }
 
-    setForm({ fullName: "", email: "", password: "", confirmPassword: "" });
+    setForm({ fullName: "", email: "", password: "", confirmPassword: "", adminCode: "" });
     setMode("login");
     setNotice("Akun admin berhasil dibuat. Silakan login.");
   };
@@ -184,11 +215,15 @@ export default function AuthGate({ children }) {
               </label>
               <label>
                 Password
-                <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="Minimal 6 karakter" />
+                <SecretInput name="password" value={form.password} onChange={handleChange} placeholder="Minimal 6 karakter" />
               </label>
               <label>
                 Konfirmasi password
-                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} placeholder="Ulangi password" />
+                <SecretInput name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Ulangi password" />
+              </label>
+              <label>
+                Kode Admin
+                <SecretInput name="adminCode" value={form.adminCode} onChange={handleChange} placeholder="Masukkan kode admin" />
               </label>
               <button type="submit" className="auth-submit">Daftar akun admin</button>
             </form>
@@ -200,7 +235,7 @@ export default function AuthGate({ children }) {
               </label>
               <label>
                 Password
-                <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="password" />
+                <SecretInput name="password" value={form.password} onChange={handleChange} placeholder="password" />
               </label>
               <button type="submit" className="auth-submit">Masuk</button>
             </form>
