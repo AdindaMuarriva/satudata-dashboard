@@ -47,11 +47,18 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
 
       {(pipelineNotice || pipelineError) && <p className={`analysis-pipeline-message ${pipelineError ? "error" : ""}`}>{pipelineError || pipelineNotice}</p>}
 
+      <div className="analysis-visualization-grid">
       <section className="analysis-placeholder-panel">
         <div className="placeholder-panel-heading"><VisualizationIcon size={23} aria-hidden="true" /><div><h2>Visualisasi Analisis</h2><p>{filters.visualization} untuk {filters.region} pada tahun {filters.year}. Nilai pada chart berasal dari baris data yang berhasil diproses.</p></div></div>
         <div className="analysis-selection-summary" aria-live="polite"><span>{filters.year}</span><span>{filters.region}</span><span>{filters.commodity}</span><span>{filters.visualization}</span></div>
         {preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} /> : <div className="analysis-chart-skeleton" aria-label={`Memuat ${filters.visualization}`}></div>}
       </section>
+
+      <section className="analysis-placeholder-panel analysis-map-panel">
+        <div className="placeholder-panel-heading"><Map size={23} aria-hidden="true" /><div><h2>Peta Sebaran Wilayah</h2><p>Persebaran nilai per kabupaten/kota untuk tahun {filters.year}.</p></div></div>
+        {preprocessingResult ? <VisualizationRenderer preprocessingResult={preprocessingResult} filters={filters} mapOnly /> : <div className="analysis-chart-skeleton" aria-label="Memuat peta sebaran wilayah"></div>}
+      </section>
+      </div>
 
       {preprocessingResult ? <section className="analysis-placeholder-panel year-comparison-panel" aria-live="polite">
         <div className="placeholder-panel-heading"><TrendingUp size={23} aria-hidden="true" /><div><h2>Perbandingan Antar-Tahun</h2><p>Menampilkan seluruh tahun dalam rentang pembanding. Filter wilayah dan komoditas tetap diterapkan.</p></div></div>

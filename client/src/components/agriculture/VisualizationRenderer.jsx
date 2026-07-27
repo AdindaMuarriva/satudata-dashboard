@@ -14,13 +14,11 @@ function downloadChartData(model) {
   URL.revokeObjectURL(url);
 }
 
-export default function VisualizationRenderer({ preprocessingResult, filters, yearComparison = false }) {
+export default function VisualizationRenderer({ preprocessingResult, filters, yearComparison = false, mapOnly = false }) {
   const containerRef = useRef(null);
   const trendRef = useRef(null);
   const mapRef = useRef(null);
-  const chartFilters = useMemo(() => filters.visualization === "Peta Aceh" ? { ...filters, visualization: "Bar Chart" } : filters, [filters]);
-  const model = useMemo(() => selectVisualization(preprocessingResult, chartFilters), [preprocessingResult, chartFilters]);
-  const mapModel = useMemo(() => selectVisualization(preprocessingResult, { ...filters, visualization: "Peta Aceh" }), [preprocessingResult, filters]);
+  const model = useMemo(() => selectVisualization(preprocessingResult, mapOnly ? { ...filters, visualization: "Peta Aceh" } : filters), [preprocessingResult, filters, mapOnly]);
 
   useEffect(() => {
     if (model.status !== "ready") return;
@@ -28,16 +26,21 @@ export default function VisualizationRenderer({ preprocessingResult, filters, ye
     if (model.type === "bar" && containerRef.current) renderBarChart(containerRef.current, model.data, model.unit || model.valueColumn, tooltip);
     if ((model.type === "pie" || model.type === "donut") && containerRef.current) renderDonutChart(containerRef.current, model.data, tooltip, { donut: model.type === "donut", unit: model.unit });
     if (model.type === "line" && trendRef.current) renderTrendChart(trendRef.current, model.data, model.unit || model.valueColumn, tooltip);
-    if (mapModel.status === "ready" && mapModel.type === "map" && mapRef.current) renderRegionalChoropleth(mapRef.current, mapModel.data, mapModel.unit || mapModel.valueColumn, tooltip).catch(error => console.error("[Visualization] Gagal merender Peta Aceh:", error));
+    if (model.type === "map" && mapRef.current) renderRegionalChoropleth(mapRef.current, model.data, model.unit || model.valueColumn, tooltip).catch(error => console.error("[Visualization] Gagal merender Peta Aceh:", error));
     console.log("[Visualization] Data dikirim ke renderer:", { type: model.type, sourceRows: model.sourceRowCount, renderedPoints: model.renderedDataCount });
-  }, [model, mapModel]);
+  }, [model]);
 
   if (model.status !== "ready") return <p className="visualization-unavailable">{model.message || "Visualisasi tidak tersedia untuk dataset ini."}</p>;
   const Icon = TYPE_ICONS[model.type] || BarChart3;
+  const mapSummary = model.type === "map" ? {
+    count: model.data.length,
+    highest: [...model.data].sort((left, right) => right.value - left.value)[0],
+    lowest: [...model.data].sort((left, right) => left.value - right.value)[0]
+  } : null;
 
   return (
     <div className="visualization-renderer">
-      <div className="visualization-renderer-heading"><Icon size={18} aria-hidden="true" /><strong>{model.title}</strong>{model.unit ? <small>Satuan: {model.unit}</small> : null}<span>{model.type}</span><button type="button" className="chart-download-button" onClick={() => downloadChartData(model)}><Download size={15} /> Unduh CSV</button></div>
+      {!mapOnly && <div className="visualization-renderer-heading"><Icon size={18} aria-hidden="true" /><strong>{model.title}</strong>{model.unit ? <small>Satuan: {model.unit}</small> : null}<span>{model.type}</span><button type="button" className="chart-download-button" onClick={() => downloadChartData(model)}><Download size={15} /> Unduh CSV</button></div>}
       {model.notice ? <p className="visualization-unavailable">{model.notice}</p> : null}
       {model.type === "bar" || model.type === "pie" || model.type === "donut" ? <div ref={containerRef} className="visualization-canvas"></div> : null}
       {model.type === "line" ? <svg ref={trendRef} className="visualization-trend" width="100%" height="300"></svg> : null}

@@ -17,7 +17,7 @@ const FILTERS = [
   { key: "year", label: "Tahun", options: fallbackYears() },
   { key: "region", label: "Kabupaten/Kota", options: ["Seluruh Aceh", "Aceh Besar", "Aceh Utara", "Pidie", "Aceh Timur"] },
   { key: "commodity", label: "Komoditas", options: ["Semua komoditas", "Padi", "Jagung", "Kedelai", "Cabai"] },
-  { key: "visualization", label: "Jenis Visualisasi", options: ["Bar Chart", "Line Chart", "Pie Chart", "Donut Chart", "Histogram", "Peta Aceh"] }
+  { key: "visualization", label: "Jenis Visualisasi", options: ["Bar Chart", "Line Chart", "Pie Chart", "Donut Chart", "Histogram"] }
 ];
 
 export default function AnalysisFilters({ filters, onChange, onReset, availableYears = [] }) {

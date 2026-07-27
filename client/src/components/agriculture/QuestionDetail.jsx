@@ -28,7 +28,8 @@ function defaultComparisonYear(years) {
 }
 
 export default function QuestionDetail({ question, onBack, analysisLabel = "ANALISIS PERTANIAN" }) {
-  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, visualization: question.recommendedChart || DEFAULT_FILTERS.visualization }));
+  const chartRecommendation = question.recommendedChart === "Peta Aceh" ? DEFAULT_FILTERS.visualization : question.recommendedChart || DEFAULT_FILTERS.visualization;
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, visualization: chartRecommendation }));
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [matchResult, setMatchResult] = useState(null);
   const [preprocessingResult, setPreprocessingResult] = useState(null);
@@ -146,7 +147,7 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
       return { ...current, year: value, comparisonYear };
     })} onReset={() => setFilters(current => {
       const year = defaultYearForDevice(availableYears, current.year);
-      return { ...DEFAULT_FILTERS, year, comparisonYear: defaultComparisonYear(availableYears), visualization: question.recommendedChart || "Bar Chart" };
+      return { ...DEFAULT_FILTERS, year, comparisonYear: defaultComparisonYear(availableYears), visualization: chartRecommendation };
     })} />
     <AnalysisPlaceholder filters={filters} selectedDataset={selectedDataset} matchResult={matchResult} preprocessingResult={preprocessingResult} pipelineStatus={pipelineStatus} pipelineError={pipelineError} pipelineNotice={pipelineNotice} />
   </main>;
