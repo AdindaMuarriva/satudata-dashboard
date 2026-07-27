@@ -331,9 +331,20 @@ export async function fetchDatasetsMultiPage({ includeHidden = false } = {}) {
   }
 }
 
+function getLegacyTrashedDatasetUuids() {
+  if (typeof window === "undefined") return [];
+  try {
+    const records = JSON.parse(window.localStorage.getItem("satudata_trashed_datasets") || "[]");
+    return Array.isArray(records) ? records.map((record) => String(record.id)) : [];
+  } catch {
+    return [];
+  }
+}
+
 async function applyDatasetVisibility(catalog, includeHidden) {
   const visibility = await getDatasetVisibility();
   const legacyDeletedUuids = new Set(catalog.legacyDeletedUuids || []);
+  const legacyTrashedUuids = new Set(getLegacyTrashedDatasetUuids());
   const rowsWithStatus = catalog.rows.map((dataset) => {
     const status = visibility.get(String(dataset.uuid || dataset.id));
     return status ? { ...dataset, ...status } : dataset;
@@ -344,6 +355,7 @@ async function applyDatasetVisibility(catalog, includeHidden) {
   const rows = rowsWithStatus.filter((dataset) => {
     const id = String(dataset.uuid || dataset.id);
     return !legacyDeletedUuids.has(id)
+      && !legacyTrashedUuids.has(id)
       && dataset.is_active !== false
       && !dataset.deleted_at
       && !dataset.permanently_deleted;

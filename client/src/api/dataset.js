@@ -54,12 +54,40 @@ export async function getTrashDatasets() {
     .filter((dataset) => dataset.deleted_at)
     .map((dataset) => ({ ...dataset, trashed_at: dataset.deleted_at }));
   const localIds = new Set(localTrash.map(getDatasetId));
+  const legacyRecords = getTrashedRecords();
+
+  // Versi awal menyimpan sampah dataset portal di localStorage. Saat admin
+  // membuka halaman ini, pindahkan catatan tersebut ke Supabase agar status
+  // menjadi global dan tetap terlihat pada perangkat lain.
+  const migratedIds = new Set();
+  await Promise.all(legacyRecords.map(async (record) => {
+    try {
+      await saveDatasetVisibility(record.id, {
+        deleted_at: record.trashed_at || new Date().toISOString(),
+        permanently_deleted: false,
+      });
+      migratedIds.add(record.id);
+    } catch (error) {
+      console.warn("Gagal memigrasikan item sampah lama:", error.message);
+    }
+  }));
+  if (migratedIds.size) {
+    saveTrashedRecords(legacyRecords.filter((record) => !migratedIds.has(record.id)));
+    invalidateDatasetCatalog();
+  }
+
   const { rows } = await fetchDatasetsMultiPage({ includeHidden: true });
   const remoteTrash = rows
     .filter((dataset) => dataset.deleted_at && !dataset.permanently_deleted && !localIds.has(getDatasetId(dataset)))
     .map((dataset) => ({ ...dataset, trashed_at: dataset.deleted_at }));
 
-  return [...localTrash, ...remoteTrash].sort(
+  // Bila proses migrasi gagal (misalnya jaringan putus), item tetap terlihat
+  // sehingga admin tidak kehilangan akses untuk memulihkan atau menghapusnya.
+  const remainingLegacyTrash = legacyRecords
+    .filter((record) => !migratedIds.has(record.id) && !localIds.has(record.id))
+    .map((record) => ({ ...record.dataset, trashed_at: record.trashed_at }));
+
+  return [...localTrash, ...remoteTrash, ...remainingLegacyTrash].sort(
     (a, b) => new Date(b.trashed_at) - new Date(a.trashed_at)
   );
 }
