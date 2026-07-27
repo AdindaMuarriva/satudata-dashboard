@@ -1,6 +1,8 @@
+import { DATA_POLLING_INTERVAL_MS } from "../config/polling.js";
+
 export const CONFIG = {
   baseUrl: "https://satudata-proxy.vercel.app",
-  pollingIntervalMs: 30000,
+  pollingIntervalMs: DATA_POLLING_INTERVAL_MS,
   datasetPagesToFetch: 8,
   datasetPageSize: 100,
   acehTopoUrl:

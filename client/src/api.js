@@ -1,12 +1,13 @@
 import * as d3 from "d3";
 import { getDatasetVisibility } from "./api/datasetVisibility.js";
+import { DATA_POLLING_INTERVAL_MS } from "./config/polling.js";
 
 const AI_BASE_URL = typeof import.meta.env === "undefined" ? "" : (import.meta.env.VITE_AI_BASE_URL || "");
 
 export const CONFIG = {
   baseUrl: "https://satudata-proxy.vercel.app",
   aiBaseUrl: AI_BASE_URL,
-  pollingIntervalMs: 30000,
+  pollingIntervalMs: DATA_POLLING_INTERVAL_MS,
   datasetPagesToFetch: 8,
   datasetPageSize: 100,
   acehTopoUrl: "https://raw.githubusercontent.com/ghapsara/indonesia-atlas/master/kabupaten-kota/Aceh/aceh-simplified-topo.json",
@@ -20,7 +21,7 @@ export const CONFIG = {
 
 // The dashboard repeatedly uses the same catalog to match a question with a
 // dataset. Keep it briefly so changing a filter does not reload the catalog.
-const DATASET_CATALOG_CACHE_MS = 30_000;
+const DATASET_CATALOG_CACHE_MS = DATA_POLLING_INTERVAL_MS;
 const DATASET_CATALOG_STORAGE_KEY = "satudata_dataset_catalog_cache";
 let datasetCatalogCache = null;
 let datasetCatalogRequest = null;
