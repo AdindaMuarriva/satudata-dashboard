@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDatasetsMultiPage } from "./api";
+import { ArrowLeft } from "lucide-react";
 
 export default function AllOrgsPage() {
   const [orgCounts, setOrgCounts] = useState([]);
@@ -34,14 +35,15 @@ export default function AllOrgsPage() {
 
   return (
     <main className="all-orgs-page">
-      <section className="all-orgs-hero">
-        <a className="all-orgs-back" href="?">← Kembali ke beranda</a>
-        <span className="all-orgs-eyebrow">EKOSISTEM SATU DATA ACEH</span>
-        <h1>Daftar Instansi</h1>
-        <p>Temukan dataset resmi berdasarkan instansi atau OPD yang mempublikasikannya di portal Satu Data Aceh.</p>
-        <div className="all-orgs-stats">
-          <div><strong>{loading ? "..." : orgCounts.length}</strong><span>Instansi terdaftar</span></div>
-          <div><strong>{loading ? "..." : totalDatasets}</strong><span>Dataset terindeks</span></div>
+      <section className="search-results-hero" style={{ paddingTop: 18 }}>
+        <a className="back-link" href="?"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke beranda</a>
+        <div className="search-results-head">
+          <div>
+            <span className="search-results-eyebrow">JELAJAH DATA</span>
+            <h1>Daftar Instansi</h1>
+            <p>Temukan dataset resmi berdasarkan instansi atau OPD yang mempublikasikannya di portal Satu Data Aceh.</p>
+          </div>
+          <div className="search-results-count"><span>Total Instansi</span><strong>{loading ? "..." : orgCounts.length}</strong></div>
         </div>
       </section>
 

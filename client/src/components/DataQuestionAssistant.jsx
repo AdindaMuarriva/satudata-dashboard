@@ -62,11 +62,27 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
     setState({ status: "loading", error: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });
     try {
       const candidates = rankDatasets(createQuestionRequest(text), datasets).filter(item => item.score > 0).slice(0, 8);
-      if (!candidates.length) throw new Error(`Belum ada dataset ${themeLabel} yang cocok dengan kata kunci pertanyaan tersebut.`);
+      if (!candidates.length) {
+        throw new Error(`Belum ada dataset ${themeLabel} yang cocok dengan kata kunci pertanyaan tersebut.`);
+      }
+
+      // Coba beberapa kandidat dataset teratas, jangan hanya yang pertama.
+      // Ini membuat sistem lebih tangguh jika dataset paling relevan ternyata kosong.
       for (const candidate of candidates) {
-        const first = await fetchDatasetValues(candidate.dataset.uuid, "");
-        const rows = first.rows || [];
-        if (!rows.length) continue;
+        let first;
+        try {
+          first = await fetchDatasetValues(candidate.dataset.uuid, "");
+        } catch (fetchError) {
+          console.warn(`Gagal memuat data untuk kandidat ${candidate.dataset.uuid}, mencoba selanjutnya...`, fetchError.message);
+          continue; // Coba kandidat berikutnya jika fetch gagal
+        }
+
+        const rows = first?.rows || [];
+        if (!rows.length) {
+          console.log(`Kandidat ${candidate.dataset.uuid} tidak memiliki data, mencoba selanjutnya...`);
+          continue; // Coba kandidat berikutnya jika dataset kosong
+        }
+
         const processed = preprocessDataset(rows);
         if (!processed.cleanedData.length) continue;
         const years = [...new Set((first.years || []).map(item => String(item?.year ?? item)).filter(year => /^\d{4}$/.test(year)))].sort((a, b) => Number(b) - Number(a));
@@ -87,6 +103,7 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
         setState({ status: "ready", error: "", dataset: candidate.dataset, score: candidate.score, processed, rowCount: processed.cleanedData.length, year: years[0] || "seluruh periode", visualization, aiExplanation, aiNotice });
         return;
       }
+
       throw new Error("Dataset yang relevan ditemukan, tetapi belum memiliki baris data yang dapat dianalisis.");
     } catch (error) {
       setState({ status: "error", error: error.message || "Analisis tidak dapat dilakukan.", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });

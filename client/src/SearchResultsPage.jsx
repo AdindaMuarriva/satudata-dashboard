@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDatasetsMultiPage, pick } from "./api";
+import { ArrowLeft } from "lucide-react";
 
 export default function SearchResultsPage({ query }) {
   const [datasets, setDatasets] = useState([]);
@@ -54,8 +55,8 @@ export default function SearchResultsPage({ query }) {
 
   return (
     <main className="search-results-page">
-      <section className="search-results-hero">
-        <a className="search-results-back" href="?">← Kembali ke beranda</a>
+      <section className="search-results-hero" style={{ paddingTop: 18 }}>
+        <a className="back-link" href="?"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke beranda</a>
         <div className="search-results-head">
           <div>
             <span className="search-results-eyebrow">KATALOG DATA ACEH</span>

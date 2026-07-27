@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchDatasetsMultiPage, pick } from "./api";
 import { renderUnitChart } from "./charts";
+import { ArrowLeft } from "lucide-react";
 
 export default function OrgPage({ orgName, tooltipRef }) {
   const [datasets, setDatasets] = useState([]);
@@ -33,14 +34,15 @@ export default function OrgPage({ orgName, tooltipRef }) {
 
   return (
     <main className="org-page">
-      <section className="org-hero">
-        <a className="org-back-link" href="?">← Kembali ke beranda</a>
-        <span className="org-eyebrow">DASHBOARD INSTANSI</span>
-        <h1>{orgName}</h1>
-        <p>{loading ? "Menyiapkan data instansi..." : "Jelajahi katalog dan ringkasan data yang dipublikasikan oleh instansi ini."}</p>
-        <div className="org-hero-stats">
-          <div><strong>{loading ? "..." : datasets.length}</strong><span>Dataset tersedia</span></div>
-          <div><strong>{loading ? "..." : unitCount}</strong><span>Jenis satuan</span></div>
+      <section className="search-results-hero" style={{ paddingTop: 18 }}>
+        <a className="back-link" href="?page=all-orgs"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke daftar instansi</a>
+        <div className="search-results-head">
+          <div>
+            <span className="search-results-eyebrow">PROFIL INSTANSI</span>
+            <h1>{orgName}</h1>
+            <p>{loading ? "Menyiapkan data instansi..." : "Jelajahi katalog dan ringkasan data yang dipublikasikan oleh instansi ini."}</p>
+          </div>
+          <div className="search-results-count"><span>Total Dataset</span><strong>{loading ? "..." : datasets.length}</strong></div>
         </div>
       </section>
 

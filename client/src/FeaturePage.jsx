@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDatasetsMultiPage, pick } from "./api";
+import { ArrowLeft } from "lucide-react";
 
 const FEATURE_FILTERS = {
   Dataset: dataset => true,
@@ -50,18 +51,17 @@ export default function FeaturePage({ featureName }) {
   });
 
   return (
-    <main className="feature-page">
-      <section className="feature-hero">
-        <a className="feature-back-link" href="?">← Kembali ke beranda</a>
-        <div className="feature-hero-grid">
+    <main className="search-results-page">
+      <section className="search-results-hero" style={{ paddingTop: 18 }}>
+        <a className="back-link" href="?"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke beranda</a>
+        <div className="search-results-head">
           <div>
-            <span className="feature-eyebrow">{feature.label}</span>
+            <span className="search-results-eyebrow">{feature.label}</span>
             <h1>{featureName}</h1>
             <p>{feature.text}</p>
           </div>
-          <div className="feature-hero-icon" aria-hidden="true">{feature.icon}</div>
+          <div className="search-results-count"><span>Total Konten</span><strong>{loading ? "..." : datasets.length}</strong></div>
         </div>
-        <div className="feature-hero-total"><strong>{loading ? "..." : datasets.length}</strong><span>Konten ditemukan</span></div>
       </section>
 
       <section className="feature-content">

@@ -182,7 +182,7 @@ export default function ListPage({ tooltipRef }) {
 
     if (org !== "__all__" && orgName !== org.toLowerCase()) return false;
     if (normalizedChip && !haystack.includes(normalizedChip)) return false;
-    if (normalizedSearch && !title.includes(normalizedSearch)) return false;
+if (normalizedSearch && !title.includes(normalizedSearch)) return false;
     return true;
   });
 
@@ -411,8 +411,6 @@ export default function ListPage({ tooltipRef }) {
           </ul>
         </div>
       </div>
-
-      <footer>Sumber: satudata.acehprov.go.id/api (via proxy) · Auto-refresh tiap 30 detik</footer>
     </div>
   );
 }

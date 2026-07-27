@@ -1,0 +1,837 @@
+/* ==========================================================
+   FOOTER V2 - SATU DATA ACEH
+========================================================== */
+
+:root{
+  --primary:#991B1B;
+  --primary-dark:#7F1D1D;
+  --accent:#F59E0B;
+  --text:#F8FAFC;
+  --muted:#E5E7EB;
+  --border:rgba(255,255,255,.12);
+}
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.app-footer{
+  position:relative;
+  overflow:hidden;
+
+  margin-top:80px;
+
+  color:var(--text);
+
+  background:
+    radial-gradient(circle at top left,
+      rgba(255,255,255,.06),
+      transparent 35%),
+
+    radial-gradient(circle at bottom right,
+      rgba(245,158,11,.08),
+      transparent 35%),
+
+    linear-gradient(
+      135deg,
+      #7F1D1D 0%,
+      #991B1B 40%,
+      #B91C1C 100%
+    );
+}
+
+/* Glow */
+
+.app-footer::before{
+
+  content:"";
+
+  position:absolute;
+
+  width:420px;
+  height:420px;
+
+  top:-160px;
+  left:-120px;
+
+  border-radius:50%;
+
+  background:#EF4444;
+
+  opacity:.12;
+
+  filter:blur(120px);
+
+}
+
+.app-footer::after{
+
+  content:"";
+
+  position:absolute;
+
+  width:360px;
+  height:360px;
+
+  bottom:-160px;
+  right:-120px;
+
+  border-radius:50%;
+
+  background:#F59E0B;
+
+  opacity:.08;
+
+  filter:blur(120px);
+
+}
+
+/* ==========================================================
+   CONTAINER
+========================================================== */
+
+.footer-container{
+
+  position:relative;
+
+  z-index:2;
+
+  max-width:1280px;
+
+  margin:auto;
+
+  padding:70px 40px;
+
+  display:grid;
+
+  grid-template-columns:1.8fr 1fr;
+
+  gap:60px;
+
+}
+
+/* ==========================================================
+   BRAND
+========================================================== */
+
+.footer-brand{
+
+  max-width:580px;
+
+}
+
+.footer-logo{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:18px;
+
+  margin-bottom:26px;
+
+}
+
+.logo-icon{
+
+  width:64px;
+  height:64px;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  flex-shrink:0;
+
+  border-radius:18px;
+
+  background:
+  linear-gradient(
+    135deg,
+    #F43F5E,
+    #B91C1C
+  );
+
+  color:white;
+
+  border:1px solid rgba(255,255,255,.12);
+
+  box-shadow:
+  0 18px 40px rgba(0,0,0,.25);
+
+}
+
+.footer-logo h2{
+
+  margin:0;
+
+  font-size:32px;
+
+  font-weight:700;
+
+  color:white;
+
+}
+
+.footer-logo span{
+
+  display:block;
+
+  margin-top:6px;
+
+  color:#FCD34D;
+
+  font-size:15px;
+
+  letter-spacing:.02em;
+
+}
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.footer-description{
+
+  margin:24px 0 38px;
+
+  color:#FDECEC;
+
+  line-height:2;
+
+  font-size:15px;
+
+  text-align:justify;
+
+}
+
+/* ==========================================================
+   CONTACT
+========================================================== */
+
+.footer-contact{
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:20px;
+
+}
+
+.contact-item{
+
+  display:grid; /* Menggunakan grid untuk ikon dan blok konten */
+
+  grid-template-columns:24px 1fr; /* Kolom pertama untuk ikon, kolom kedua untuk konten */
+
+  align-items:flex-start;
+
+  column-gap:14px; /* Jarak antara ikon dan blok konten */
+
+}
+
+.contact-item svg{
+
+  margin-top:3px;
+
+  flex-shrink:0; /* Memastikan ikon tidak menyusut */
+
+  color:#FCD34D;
+
+}
+
+.contact-item div { /* Menargetkan wrapper div baru untuk strong dan span */
+  display: flex;
+  flex-direction: column; /* Menumpuk strong dan span secara vertikal */
+}
+
+.contact-item strong{
+
+  margin-bottom: 4px; /* Memberi jarak antara label dan nilai */
+
+}
+
+.contact-item span{
+
+  color:#FDECEC;
+
+  line-height:1.8;
+
+}
+
+/* Penyesuaian responsif untuk contact-item */
+@media (max-width:480px){
+  .contact-item{
+    /* Memastikan tetap grid 2 kolom (ikon + konten) */
+    grid-template-columns:24px 1fr;
+    column-gap:12px;
+  }
+  /* Aturan grid-column untuk strong dihapus karena sekarang berada di dalam div */
+
+}
+/* ==========================================================
+   MENU
+========================================================== */
+
+.footer-links{
+
+    display:grid;
+
+    grid-template-columns:repeat(3, minmax(160px,1fr));
+
+    gap:45px;
+
+    align-content:start;
+
+}
+
+.footer-column{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.footer-column h4{
+
+    position:relative;
+
+    display:inline-block;
+
+    margin:0 0 22px;
+
+    padding-bottom:10px;
+
+    color:#FCD34D;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    letter-spacing:.12em;
+
+    text-transform:uppercase;
+
+}
+
+.footer-column h4::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    bottom:0;
+
+    width:42px;
+
+    height:3px;
+
+    border-radius:20px;
+
+    background:linear-gradient(
+        90deg,
+        #F59E0B,
+        #FCD34D
+    );
+
+}
+
+.footer-column ul{
+
+    margin:0;
+
+    padding:0;
+
+    list-style:none;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+}
+
+.footer-column li{
+
+    margin:0;
+
+}
+
+/* ==========================================================
+   LINK
+========================================================== */
+
+.footer-column a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    color:#FDECEC;
+
+    text-decoration:none;
+
+    font-size:15px;
+
+    transition:all .28s ease;
+
+}
+
+.footer-column a svg{
+
+    color:#F59E0B;
+
+    transition:all .28s ease;
+
+    flex-shrink:0;
+
+}
+
+.footer-column a:hover{
+
+    color:#ffffff;
+
+    transform:translateX(6px);
+
+}
+
+.footer-column a:hover svg{
+
+    color:#ffffff;
+
+    transform:translateX(3px);
+
+}
+
+/* ==========================================================
+   CARD EFFECT
+========================================================== */
+
+.footer-brand{
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    backdrop-filter:blur(10px);
+
+    border-radius:24px;
+
+    padding:34px;
+
+}
+
+.footer-column{
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:22px;
+
+    padding:26px;
+
+    transition:.3s ease;
+
+}
+
+.footer-column:hover{
+
+    transform:translateY(-5px);
+
+    background:rgba(255,255,255,.08);
+
+    border-color:rgba(252,211,77,.35);
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,.18);
+
+}
+
+/* ==========================================================
+   SPACING
+========================================================== */
+
+.footer-column ul li:last-child{
+
+    margin-bottom:0;
+
+}
+
+.footer-column a{
+
+    padding:3px 0;
+
+}
+/* ==========================================================
+   FOOTER BOTTOM
+========================================================== */
+
+.footer-bottom{
+
+    position:relative;
+
+    z-index:2;
+
+    margin-top:55px;
+
+    border-top:1px solid rgba(255,255,255,.10);
+
+    background:rgba(0,0,0,.10);
+
+    backdrop-filter:blur(8px);
+
+}
+
+.footer-bottom-container{
+
+    max-width:1280px;
+
+    margin:auto;
+
+    padding:24px 40px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.footer-bottom p{
+
+    margin:0;
+
+    color:#FDECEC;
+
+    font-size:14px;
+
+    letter-spacing:.2px;
+
+}
+
+.bottom-links{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:26px;
+
+    flex-wrap:wrap;
+
+}
+
+.bottom-links a{
+
+    position:relative;
+
+    color:#FDECEC;
+
+    text-decoration:none;
+
+    transition:.3s ease;
+
+    font-size:14px;
+
+}
+
+.bottom-links a::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    bottom:-4px;
+
+    width:0;
+
+    height:2px;
+
+    border-radius:999px;
+
+    background:#FCD34D;
+
+    transition:.3s;
+
+}
+
+.bottom-links a:hover{
+
+    color:#FCD34D;
+
+}
+
+.bottom-links a:hover::after{
+
+    width:100%;
+
+}
+
+/* ==========================================================
+   NICE HOVER
+========================================================== */
+
+.logo-icon{
+
+    transition:.35s ease;
+
+}
+
+.footer-brand:hover .logo-icon{
+
+    transform:rotate(-8deg) scale(1.06);
+
+}
+
+.footer-brand{
+
+    transition:.35s ease;
+
+}
+
+.footer-brand:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 20px 45px rgba(0,0,0,.18);
+
+}
+
+.footer-column{
+
+    transition:.35s ease;
+
+}
+
+.footer-column:hover{
+
+    transform:translateY(-6px);
+
+}
+
+/* ==========================================================
+   SCROLL ANIMATION READY
+========================================================== */
+
+.footer-brand,
+.footer-column{
+
+    animation:fadeUp .6s ease both;
+
+}
+
+.footer-column:nth-child(2){
+
+    animation-delay:.08s;
+
+}
+
+.footer-column:nth-child(3){
+
+    animation-delay:.16s;
+
+}
+
+.footer-column:nth-child(4){
+
+    animation-delay:.24s;
+
+}
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(30px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:1200px){
+
+.footer-container{
+
+grid-template-columns:1fr;
+
+gap:45px;
+
+}
+
+.footer-links{
+
+grid-template-columns:repeat(3,minmax(170px,1fr));
+
+}
+
+}
+
+@media (max-width:900px){
+
+.footer-links{
+
+grid-template-columns:repeat(2,1fr);
+
+gap:24px;
+
+}
+
+.footer-brand{
+
+max-width:100%;
+
+}
+
+.footer-description{
+
+max-width:100%;
+
+}
+
+}
+
+@media (max-width:640px){
+
+.footer-container{
+
+padding:55px 22px;
+
+}
+
+.footer-links{
+
+grid-template-columns:1fr;
+
+}
+
+.footer-logo{
+
+align-items:flex-start;
+
+}
+
+.footer-logo h2{
+
+font-size:28px;
+
+}
+
+.footer-description{
+
+font-size:14px;
+
+line-height:1.9;
+
+}
+
+.contact-item{
+
+grid-template-columns:24px 75px 1fr;
+
+column-gap:12px;
+
+}
+
+.footer-column{
+
+padding:22px;
+
+}
+
+.footer-bottom-container{
+
+flex-direction:column;
+
+text-align:center;
+
+}
+
+.bottom-links{
+
+justify-content:center;
+
+gap:18px;
+
+}
+
+}
+
+@media (max-width:480px){
+
+.logo-icon{
+
+width:54px;
+
+height:54px;
+
+}
+
+.footer-logo{
+
+gap:14px;
+
+}
+
+.footer-logo h2{
+
+font-size:24px;
+
+}
+
+.contact-item{
+
+grid-template-columns:24px 1fr;
+
+}
+
+.contact-item strong{
+
+grid-column:2 / 4;
+
+}
+
+.footer-column{
+
+padding:20px;
+
+}
+
+.footer-bottom{
+
+font-size:13px;
+
+}
+
+}

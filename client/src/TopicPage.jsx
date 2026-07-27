@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDatasetsMultiPage, pick } from "./api";
+import { ArrowLeft } from "lucide-react";
 
 export default function TopicPage({ topicName }) {
   const [datasets, setDatasets] = useState([]);
@@ -48,20 +49,18 @@ export default function TopicPage({ topicName }) {
   });
 
   return (
-    <div className="wrap">
-      <a className="back-link" href="?">← Kembali ke daftar</a>
-      <div className="section-head topic-page-head">
-        <div className="titles">
-          <h1>Topik: {topicName || "Semua"}</h1>
-          <p>{loading ? "Memuat dataset..." : `Menampilkan ${datasets.length} dataset untuk topik ini.`}</p>
-        </div>
-        <div className="topic-summary-card">
+    <main className="search-results-page">
+      <section className="search-results-hero" style={{ paddingTop: 18 }}>
+        <a className="back-link" href="?"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke beranda</a>
+        <div className="search-results-head">
           <div>
-            <span className="topic-summary-label">Total Dataset</span>
-            <strong>{loading ? "..." : datasets.length}</strong>
+            <span className="search-results-eyebrow">JELAJAH DATA PER TOPIK</span>
+            <h1>Topik: {topicName || "Semua"}</h1>
+            <p>{loading ? "Memuat dataset..." : `Menampilkan dataset yang relevan untuk topik ini.`}</p>
           </div>
+          <div className="search-results-count"><span>Total Dataset</span><strong>{loading ? "..." : datasets.length}</strong></div>
         </div>
-      </div>
+      </section>
 
       <div className="topic-search-bar">
         <input
@@ -72,7 +71,7 @@ export default function TopicPage({ topicName }) {
         />
       </div>
 
-      <div className="topic-results">
+      <section className="search-results-content" style={{ paddingTop: 0 }}>
         {loading ? (
           <div className="panel wide">
             <p>Memuat dataset...</p>
@@ -95,7 +94,7 @@ export default function TopicPage({ topicName }) {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

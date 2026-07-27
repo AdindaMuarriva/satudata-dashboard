@@ -8,6 +8,7 @@ import {
   renderBarChart, renderRankingChart, renderColorLegend,
   renderChoroplethMap, renderTrendChart
 } from "./charts";
+import { ArrowLeft } from "lucide-react";
 
 export default function DetailPage({ uuid, tooltipRef }) {
   const [meta, setMeta] = useState(null);
@@ -157,7 +158,7 @@ export default function DetailPage({ uuid, tooltipRef }) {
 
   return (
     <div id="detailView" className="detail-page">
-      <a className="back-link" href="?">← Kembali ke daftar dataset</a>
+      <a className="back-link" href="javascript:history.back()"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke halaman sebelumnya</a>
 
       <div className="detail-header detail-hero">
         <h1>{meta.judul || "Tanpa judul"}</h1>

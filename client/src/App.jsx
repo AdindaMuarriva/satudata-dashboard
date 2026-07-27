@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import ListPage from "./ListPage";
 import DetailPage from "./Detailpage";
 import OrgPage from "./OrgPage";
 import AllOrgsPage from "./AllOrgsPage";
@@ -14,9 +13,11 @@ import SocialDashboardPage from "./SocialDashboardPage";
 import InfrastructureDashboardPage from "./InfrastructureDashboardPage";
 import AuthGate from "./components/AuthGate";
 import AdminPage from "./components/AdminPage";
-import { supabase } from "./lib/supabase";
-import { createActivityLog } from "./api/activity";
-import { fetchDatasetsMultiPage, isEducationRelevant, isEnvironmentRelevant, isHealthRelevant, isStatisticsRelevant, isThemeRelevant } from "./api";
+import Footer from "./components/Footer";
+import ListPage from "./ListPage";
+import { supabase } from "./lib/supabase"; 
+import { createActivityLog } from "./api/activity"; 
+import { fetchDatasetsMultiPage, getCachedDatasetCatalog, isEducationRelevant, isEnvironmentRelevant, isHealthRelevant, isStatisticsRelevant, isThemeRelevant } from "./api";
 
 // Baca sesi admin langsung (tanpa mount AuthGate) — cuma dipakai buat
 // nampilin bar kecil "Login sebagai admin" pas admin lagi liat-liat
@@ -64,6 +65,12 @@ export default function App() {
   const query = params.get("query");
   const datasets = params.get("datasets");
   const isLandingPage = !uuid && !org && !page;
+
+  // KUNCI PERBAIKAN: Terapkan layout lebar penuh untuk landing page, semua halaman dashboard,
+  // dan halaman-halaman utama lainnya agar tampilan lebih konsisten dan modern.
+  const fullWidthPages = ["all-orgs", "search", "compare", "topic", "field", "feature"];
+  const isOrgPage = !!org;
+  const isFullWidthPage = isLandingPage || isOrgPage || (page && (page.startsWith("dashboard-") || fullWidthPages.includes(page)));
 
   const isAdminRoute = page === "admin" || params.get("admin") === "1";
 
@@ -127,7 +134,7 @@ export default function App() {
   }
 
   return (
-    <div className={`wrap${isLandingPage ? " landing-shell" : ""}`}>
+    <div className={`wrap${isFullWidthPage ? " landing-shell" : ""}`}>
       {authNotice && <div className="auth-toast" role="status">{authNotice}</div>}
       {adminSession && (
         <div className="admin-bar">
@@ -137,6 +144,7 @@ export default function App() {
         </div>
       )}
       {publicPageContent}
+      {!isAdminRoute && <Footer />}
       <div className="tooltip" ref={tooltipRef}></div>
     </div>
   );

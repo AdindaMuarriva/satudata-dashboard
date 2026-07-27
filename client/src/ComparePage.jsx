@@ -66,7 +66,7 @@ export default function ComparePage({ datasetIds, tooltipRef }) {
 
   return (
     <main className="comparison-page">
-      <a className="back-link" href="javascript:history.back()">← Kembali ke hasil pencarian</a>
+      <a className="back-link" href="javascript:history.back()"><ArrowLeft size={18} aria-hidden="true" /> Kembali ke hasil pencarian</a>
       <section className="comparison-hero">
         <span>PERBANDINGAN DATASET</span>
         <h1>Visualisasi Gabungan</h1>
@@ -77,29 +77,28 @@ export default function ComparePage({ datasetIds, tooltipRef }) {
           <section className="comparison-summary">
             {series.map((item, index) => {
               const latest = item.data[item.data.length - 1];
-              return (
-                <div className="comparison-summary-card" key={item.uuid} style={{ "--series-color": `var(--series-${index % 5})` }}>
-                  <span className="comparison-series-dot"></span>
-                  <span className="comparison-series-title">{item.title}</span>
-                  <strong>{latest ? new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(latest.value) : "—"}</strong>
-                  <small>{latest ? `Tahun ${latest.year} · ${item.satuan}` : item.satuan}</small>
-                </div>
-              );
+              return <div className="comparison-summary-card" key={item.uuid} style={{ "--series-color": `var(--series-${index % 5})` }}>
+                <span className="comparison-series-dot"></span>
+                <span className="comparison-series-title">{item.title}</span>
+                <strong>{latest ? new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(latest.value) : "—"}</strong>
+                <small>{latest ? `Tahun ${latest.year} · ${item.satuan}` : item.satuan}</small>
+              </div>;
             })}
           </section>
-          <section className="comparison-chart panel wide">
-            <div className="comparison-chart-heading">
-              <div><h2>Tren Dataset Terpilih</h2><div className="sub">Nilai pada sumbu vertikal menggunakan skala yang sama untuk memudahkan perbandingan.</div></div>
-              <span className="comparison-tip">Arahkan kursor ke titik grafik untuk detail nilai</span>
-            </div>
-            <div ref={chartRef}></div>
-          </section>
-          {activeMap && (
-            <section className="comparison-map panel wide">
+
+          <div className="comparison-grid">
+            <section className="comparison-chart panel">
+              <div className="comparison-chart-heading">
+                <div><h2>Tren Dataset Terpilih</h2><div className="sub">Nilai pada sumbu vertikal diskalakan untuk perbandingan.</div></div>
+                <span className="comparison-tip">Arahkan kursor ke titik grafik untuk detail nilai</span>
+              </div>
+              <div ref={chartRef} />
+            </section>
+            {activeMap && <aside className="comparison-map panel">
               <div className="comparison-chart-heading">
                 <div>
-                  <h2>Peta Sebaran Wilayah</h2>
-                  <div className="sub">Pilih dataset untuk melihat perbedaan nilai antar kabupaten/kota pada peta.</div>
+                  <h2>Peta Sebaran</h2>
+                  <div className="sub">Pilih dataset untuk melihat sebaran nilai antar wilayah.</div>
                 </div>
                 <label className="map-dataset-picker">Dataset pada peta
                   <select value={activeMap.uuid} onChange={event => setActiveMapId(event.target.value)}>
@@ -109,9 +108,9 @@ export default function ComparePage({ datasetIds, tooltipRef }) {
               </div>
               <div className="comparison-map-meta">Tahun {activeMap.mapYear} · Satuan: {activeMap.satuan}</div>
               <div ref={mapRef}></div>
-              <svg ref={mapLegendRef} width="100%" height="46"></svg>
-            </section>
-          )}
+              <svg ref={mapLegendRef} width="100%" height="46" aria-hidden="true"></svg>
+            </aside>}
+          </div>
         </>
       )}
     </main>

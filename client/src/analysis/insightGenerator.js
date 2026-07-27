@@ -158,11 +158,12 @@ export function generateInsights(preprocessingResult, filters = {}) {
   if (values.length === 1) {
     const row = rows.find(item => numericValue(item[valueColumn]) !== null) || {};
     const location = row.kabupaten || row.provinsi || "Provinsi Aceh";
-    const period = row.tahun ? ` pada tahun ${row.tahun}` : "";
+    const period = filters.year ? ` pada tahun ${filters.year}` : (row.tahun ? ` pada tahun ${row.tahun}` : "");
     const valueLabel = valueColumn.replace(/_/g, " ");
+    const unit = unitLabel(rows);
     return {
       title: "Ringkasan Data",
-      summary: `Berdasarkan dataset ini, ${valueLabel} ${location}${period} tercatat sebesar ${formatValue(values[0])}. Karena dataset merupakan ringkasan satu observasi, analisis perbandingan antarwilayah atau antarperiode belum dapat dilakukan.`,
+      summary: `Berdasarkan dataset ini, ${valueLabel} untuk ${location}${period} tercatat sebesar ${formatValue(values[0])}${unit}. Karena dataset hanya berisi satu nilai, analisis perbandingan antarwilayah atau tren antarperiode belum dapat dilakukan.`,
       highlights: [`Nilai yang tersedia: ${formatValue(values[0])}${row.satuan ? ` ${row.satuan}` : ""}.`],
       statistics: {
         total: values[0],
