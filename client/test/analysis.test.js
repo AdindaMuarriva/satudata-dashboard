@@ -4,6 +4,7 @@ import { preprocessDataset } from "../src/preprocessing/preprocessDataset.js";
 import { generateInsights } from "../src/analysis/insightGenerator.js";
 import { selectVisualization, selectYearComparison } from "../src/analysis/visualizationEngine.js";
 import { matchDataset } from "../src/analysis/datasetMatcher.js";
+import { buildQuestionAnswer } from "../src/analysis/questionAnswer.js";
 
 const rows = [
   { "Kab/Kota": "Aceh Besar", Tahun: "2023", Nilai: "120", Satuan: "orang" },
@@ -37,6 +38,14 @@ test("perbandingan antar-tahun memakai agregasi nilai asli per tahun", () => {
     { label: 2023, value: 220, year: 2023 },
     { label: 2024, value: 240, year: 2024 }
   ]);
+});
+
+test("jawaban pertanyaan kabupaten menyebut kabupaten, bukan hanya nilai", () => {
+  const processed = preprocessDataset(rows);
+  const insight = generateInsights(processed, { region: "Seluruh Aceh", commodity: "Semua komoditas" });
+  const answer = buildQuestionAnswer("Kabupaten mana yang memiliki hasil panen tertinggi?", processed, insight);
+  assert.match(answer, /Kabupaten\/Kota Aceh Besar/);
+  assert.match(answer, /250/);
 });
 
 test("dataset matcher memilih metadata portal yang relevan", () => {

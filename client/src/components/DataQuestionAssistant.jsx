@@ -3,6 +3,7 @@ import { BrainCircuit, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { fetchDatasetValues, requestAiExplanation } from "../api";
 import { rankDatasets } from "../analysis/datasetMatcher";
 import { generateInsights } from "../analysis/insightGenerator";
+import { buildQuestionAnswer, getQuestionIntent } from "../analysis/questionAnswer.js";
 import { preprocessDataset } from "../preprocessing/preprocessDataset";
 import VisualizationRenderer from "./agriculture/VisualizationRenderer";
 
@@ -37,7 +38,7 @@ function formatNumber(value) {
 
 export default function DataQuestionAssistant({ datasets, themeLabel }) {
   const [question, setQuestion] = useState("");
-  const [state, setState] = useState({ status: "idle", error: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization: "Bar Chart", aiExplanation: "", aiNotice: "" });
+  const [state, setState] = useState({ status: "idle", error: "", answer: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization: "Bar Chart", aiExplanation: "", aiNotice: "" });
   const [feedback, setFeedback] = useState("");
 
   function saveFeedback(value) {
@@ -59,7 +60,8 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
     if (!text) return;
     setFeedback("");
     const visualization = requestedVisualization(text);
-    setState({ status: "loading", error: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });
+    const intent = getQuestionIntent(text);
+    setState({ status: "loading", error: "", answer: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });
     try {
       const candidates = rankDatasets(createQuestionRequest(text), datasets).filter(item => item.score > 0).slice(0, 8);
       if (!candidates.length) {
@@ -85,8 +87,15 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
 
         const processed = preprocessDataset(rows);
         if (!processed.cleanedData.length) continue;
+        const hasRegionalLabels = processed.datasetStructure.hasKabupaten
+          && processed.cleanedData.some((row) => String(row.kabupaten || "").trim());
+        if (intent.asksRegion && !hasRegionalLabels) {
+          console.warn(`Dataset ${candidate.dataset.uuid} dilewati: pertanyaan meminta kabupaten/wilayah, tetapi kolom kabupaten tidak tersedia.`);
+          continue;
+        }
         const years = [...new Set((first.years || []).map(item => String(item?.year ?? item)).filter(year => /^\d{4}$/.test(year)))].sort((a, b) => Number(b) - Number(a));
         const insight = generateInsights(processed, { region: "Seluruh Aceh", commodity: "Semua komoditas" });
+        const answer = buildQuestionAnswer(text, processed, insight);
         let aiExplanation = "";
         let aiNotice = "Penjelasan statistik dibuat otomatis dari dataset sumber.";
         try {
@@ -100,13 +109,15 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
         } catch (aiError) {
           aiNotice = `Model AI belum tersedia; ${aiError.message}`;
         }
-        setState({ status: "ready", error: "", dataset: candidate.dataset, score: candidate.score, processed, rowCount: processed.cleanedData.length, year: years[0] || "seluruh periode", visualization, aiExplanation, aiNotice });
+        setState({ status: "ready", error: "", answer, dataset: candidate.dataset, score: candidate.score, processed, rowCount: processed.cleanedData.length, year: years[0] || "seluruh periode", visualization, aiExplanation, aiNotice });
         return;
       }
 
-      throw new Error("Dataset yang relevan ditemukan, tetapi belum memiliki baris data yang dapat dianalisis.");
+      throw new Error(intent.asksRegion
+        ? "Dataset yang relevan ditemukan, tetapi tidak ada yang memiliki data kabupaten/kota untuk menjawab pertanyaan wilayah secara akurat."
+        : "Dataset yang relevan ditemukan, tetapi belum memiliki baris data yang dapat dianalisis.");
     } catch (error) {
-      setState({ status: "error", error: error.message || "Analisis tidak dapat dilakukan.", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });
+      setState({ status: "error", error: error.message || "Analisis tidak dapat dilakukan.", answer: "", dataset: null, score: 0, processed: null, rowCount: 0, year: "", visualization, aiExplanation: "", aiNotice: "" });
     }
   }
 
@@ -123,7 +134,7 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
       {state.status === "ready" && insight && <div className="data-question-answer" aria-live="polite">
         <div className="data-question-source"><strong>Sumber: {state.dataset.judul || "Tanpa judul"}</strong><span>{state.dataset.organisasi?.nama || "OPD tidak tercantum"} · {state.rowCount} baris dianalisis · relevansi {state.score}%</span></div>
         <VisualizationRenderer preprocessingResult={state.processed} filters={{ year: "", region: "Seluruh Aceh", commodity: "Semua komoditas", visualization: state.visualization }} />
-        <div className="data-question-explanation"><h3>Penjelasan chart</h3><p>{state.aiExplanation || insight.summary}</p><small>{state.aiNotice}</small>
+        <div className="data-question-explanation"><h3>Jawaban</h3><p>{state.answer}</p><h3>Penjelasan chart</h3><p>{state.aiExplanation || insight.summary}</p><small>{state.aiNotice}</small>
           {insight.highlights.length > 0 && <ul>{insight.highlights.map(item => <li key={item}>{item}</li>)}</ul>}
           {insight.statistics.largest && <div className="data-question-stats"><span>Nilai tertinggi <b>{insight.statistics.largest.label}</b> · {formatNumber(insight.statistics.largest.value)}</span><span>Rata-rata <b>{formatNumber(insight.statistics.average)}</b></span><span>Periode <b>{state.year}</b></span></div>}
           <div className="ai-feedback" aria-label="Umpan balik jawaban AI"><span>Apakah jawaban ini membantu?</span><button type="button" className={feedback === "helpful" ? "selected" : ""} onClick={() => saveFeedback("helpful")}><ThumbsUp size={15} /> Membantu</button><button type="button" className={feedback === "not-helpful" ? "selected" : ""} onClick={() => saveFeedback("not-helpful")}><ThumbsDown size={15} /> Belum membantu</button>{feedback && <small>Terima kasih, masukan Anda tersimpan di perangkat ini.</small>}</div>
