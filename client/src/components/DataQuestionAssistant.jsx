@@ -135,7 +135,7 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
 
   const insight = state.processed ? generateInsights(state.processed, { region: "Seluruh Aceh", commodity: "Semua komoditas" }) : null;
   return (
-    <section className="panel data-question-assistant" aria-label="Asisten AI data">
+    <section className={`panel data-question-assistant ${unavailableMessage ? "has-modal" : ""}`} aria-label="Asisten AI data">
       <div className="data-question-heading"><BrainCircuit size={24} aria-hidden="true" /><div><h2>Tanya Data dengan AI</h2><p>Tulis pertanyaan Anda. Jawaban dihitung dari dataset asli Portal Satu Data Aceh dan selalu mencantumkan sumbernya.</p></div></div>
       <form className="data-question-form" onSubmit={ask}>
         <input value={question} onChange={event => { setQuestion(event.target.value); setUnavailableMessage(""); }} placeholder={`Contoh: Kabupaten mana yang memiliki angka ${themeLabel} tertinggi?`} aria-label="Pertanyaan tentang data" />
@@ -151,13 +151,13 @@ export default function DataQuestionAssistant({ datasets, themeLabel }) {
           <div className="ai-feedback" aria-label="Umpan balik jawaban AI"><span>Apakah jawaban ini membantu?</span><button type="button" className={feedback === "helpful" ? "selected" : ""} onClick={() => saveFeedback("helpful")}><ThumbsUp size={15} /> Membantu</button><button type="button" className={feedback === "not-helpful" ? "selected" : ""} onClick={() => saveFeedback("not-helpful")}><ThumbsDown size={15} /> Belum membantu</button>{feedback && <small>Terima kasih, masukan Anda tersimpan di perangkat ini.</small>}</div>
         </div>
       </div>}
-      {unavailableMessage && <div className="modal-backdrop" role="presentation" onMouseDown={() => setUnavailableMessage("")}>
-        <section className="modal-content data-question-modal" role="dialog" aria-modal="true" aria-labelledby="question-unavailable-title" onMouseDown={event => event.stopPropagation()}>
-          <div className="modal-icon"><AlertTriangle size={32} aria-hidden="true" /></div>
+      {unavailableMessage && <div className="data-question-backdrop" role="presentation" onMouseDown={() => setUnavailableMessage("")}>
+        <section className="data-question-modal" role="dialog" aria-modal="true" aria-labelledby="question-unavailable-title" onMouseDown={event => event.stopPropagation()}>
+          <div className="data-question-modal-icon"><AlertTriangle size={28} aria-hidden="true" /></div>
           <h3 id="question-unavailable-title">Pertanyaan belum tersedia</h3>
-          <p>{unavailableMessage}</p>
+          <p className="data-question-modal-message">{unavailableMessage}</p>
           <p className="data-question-modal-hint">Coba gunakan kata kunci yang ada pada judul atau deskripsi dataset yang tersedia.</p>
-          <div className="modal-actions"><button type="button" className="btn-danger" onClick={() => setUnavailableMessage("")}>Mengerti</button></div>
+          <div className="data-question-modal-actions"><button type="button" className="btn-understand" onClick={() => setUnavailableMessage("")}>Mengerti</button></div>
         </section>
       </div>}
     </section>

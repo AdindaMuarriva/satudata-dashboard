@@ -960,7 +960,7 @@ footer{ margin-top:24px; font-size:11.5px; color:var(--ink-dim); text-align:cent
 }
 
 /* Asisten AI data: jawaban tetap terikat pada baris dataset portal. */
-.data-question-assistant{margin:22px 0;padding:24px;border:1px solid #f0caca;background:linear-gradient(135deg,#fffafa,#fff);box-shadow:0 10px 28px rgba(127,29,29,.07)}.data-question-heading{display:flex;gap:12px;align-items:flex-start;color:#b71c1c}.data-question-heading h2{margin:0;color:#1f2937;font-family:var(--font-display);font-size:1.38rem}.data-question-heading p{margin:5px 0 0;color:#6b7280;line-height:1.5}.data-question-form{display:flex;gap:10px;margin-top:18px}.data-question-form input{min-width:0;flex:1;padding:13px 14px;border:1px solid #e5e7eb;border-radius:10px;color:#1f2937;font:inherit}.data-question-form input:focus{outline:0;border-color:#b71c1c;box-shadow:0 0 0 3px rgba(183,28,28,.12)}.data-question-form button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:0;border-radius:10px;background:#b71c1c;color:#fff;font:inherit;font-weight:750;cursor:pointer}.data-question-form button:disabled{cursor:wait;opacity:.65}.data-question-disclaimer{margin:10px 0 0;color:#7b6767;font-size:.8rem;line-height:1.45}.data-question-error{margin:16px 0 0;padding:12px;border:1px solid #f3c4c4;border-radius:10px;background:#fff4f4;color:#9b2929}.data-question-answer{margin-top:20px;padding-top:18px;border-top:1px solid #f1dede}.data-question-source{display:grid;gap:4px;padding:12px;border-radius:10px;background:#fce8e8;color:#7f1d1d}.data-question-source span{color:#765555;font-size:.82rem}.data-question-answer h3{margin:18px 0 6px;color:#1f2937}.data-question-answer p{color:#4b5563;line-height:1.55}.data-question-answer ul{margin:12px 0;padding-left:20px;color:#4b5563;line-height:1.6}.data-question-stats{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}.data-question-stats span{padding:8px 10px;border-radius:8px;background:#fff4f4;color:#6b4a4a;font-size:.83rem}.data-question-stats b{color:#991b1b}.data-question-modal-hint{font-size:.86rem;color:#7b6767!important;margin-top:-12px!important}@media(max-width:620px){.data-question-form{flex-direction:column}.data-question-form button{min-height:42px}.data-question-assistant{padding:19px}}
+.data-question-assistant{position:relative;transition:min-height 0.25s ease;margin:22px 0;padding:24px;border:1px solid #f0caca;background:linear-gradient(135deg,#fffafa,#fff);box-shadow:0 10px 28px rgba(127,29,29,.07)}.data-question-heading{display:flex;gap:12px;align-items:flex-start;color:#b71c1c}.data-question-heading h2{margin:0;color:#1f2937;font-family:var(--font-display);font-size:1.38rem}.data-question-heading p{margin:5px 0 0;color:#6b7280;line-height:1.5}.data-question-form{display:flex;gap:10px;margin-top:18px}.data-question-form input{min-width:0;flex:1;padding:13px 14px;border:1px solid #e5e7eb;border-radius:10px;color:#1f2937;font:inherit}.data-question-form input:focus{outline:0;border-color:#b71c1c;box-shadow:0 0 0 3px rgba(183,28,28,.12)}.data-question-form button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:0;border-radius:10px;background:#b71c1c;color:#fff;font:inherit;font-weight:750;cursor:pointer}.data-question-form button:disabled{cursor:wait;opacity:.65}.data-question-disclaimer{margin:10px 0 0;color:#7b6767;font-size:.8rem;line-height:1.45}.data-question-error{margin:16px 0 0;padding:12px;border:1px solid #f3c4c4;border-radius:10px;background:#fff4f4;color:#9b2929}.data-question-answer{margin-top:20px;padding-top:18px;border-top:1px solid #f1dede}.data-question-source{display:grid;gap:4px;padding:12px;border-radius:10px;background:#fce8e8;color:#7f1d1d}.data-question-source span{color:#765555;font-size:.82rem}.data-question-answer h3{margin:18px 0 6px;color:#1f2937}.data-question-answer p{color:#4b5563;line-height:1.55}.data-question-answer ul{margin:12px 0;padding-left:20px;color:#4b5563;line-height:1.6}.data-question-stats{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}.data-question-stats span{padding:8px 10px;border-radius:8px;background:#fff4f4;color:#6b4a4a;font-size:.83rem}.data-question-stats b{color:#991b1b}.data-question-modal-hint{font-size:.86rem;color:#7b6767!important;margin-top:-12px!important}@media(max-width:620px){.data-question-form{flex-direction:column}.data-question-form button{min-height:42px}.data-question-assistant{padding:19px}}
 
 .data-question-explanation{margin-top:18px;padding:16px;border:1px solid #f1dede;border-radius:12px;background:#fffafa}.data-question-explanation h3{margin-top:0}
 .chart-explanation-panel{margin-top:18px}.chart-explanation-body{margin-top:18px}.chart-explanation-body p{color:#4b5563;line-height:1.7}.chart-explanation-source{padding:11px 13px;border-radius:9px;background:#fff4f4;color:#8e1414!important;font-size:.83rem;line-height:1.5}
@@ -982,3 +982,104 @@ footer{ margin-top:24px; font-size:11.5px; color:var(--ink-dim); text-align:cent
 
 /* Dashboard Pertanian — visual identity */
 .agriculture-dashboard-page{max-width:1320px;background:#f8fafc;color:#1f2937}.agriculture-dashboard-page .back-link,.analysis-back-button{color:#b71c1c}.agriculture-dashboard-hero,.agriculture-detail-hero{padding:46px 48px;border-radius:24px;background:linear-gradient(122deg,#8e1414 0%,#b71c1c 48%,#d32f2f 100%);box-shadow:0 22px 48px rgba(183,28,28,.2);animation:agriculture-page-in .42s ease both}.agriculture-dashboard-hero>span,.agriculture-detail-hero>span{color:rgba(255,255,255,.82)}.agriculture-hero-title{display:flex;align-items:center;gap:15px;margin:10px 0}.agriculture-hero-title h1{margin:0}.agriculture-hero-icon{display:grid;width:58px;height:58px;place-items:center;border:1px solid rgba(255,255,255,.36);border-radius:18px;background:rgba(255,255,255,.14);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}.agriculture-dashboard-hero h1,.agriculture-detail-hero h1{font-size:clamp(2.25rem,4.2vw,3.8rem);letter-spacing:-.035em}.agriculture-question-search{border-color:transparent;border-radius:999px;box-shadow:0 12px 30px rgba(78,12,12,.22);transition:box-shadow .2s ease,transform .2s ease}.agriculture-question-search:focus-within{box-shadow:0 0 0 4px rgba(255,255,255,.33),0 12px 30px rgba(78,12,12,.22);transform:translateY(-1px)}.agriculture-question-search svg{color:#b71c1c}.agriculture-question-search input:focus{outline:0}.question-catalog{animation:agriculture-page-in .5s .06s ease both}.question-catalog-heading span,.question-category-head>span{color:#b71c1c}.question-catalog-heading h2,.question-category-head h2{color:#1f2937}.question-category{border-color:#e5e7eb}.question-card-grid{gap:18px}.question-card{position:relative;min-height:208px;padding:22px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;color:#1f2937;box-shadow:0 5px 18px rgba(15,23,42,.055);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}.question-card::before{position:absolute;top:18px;bottom:18px;left:-1px;width:4px;border-radius:0 5px 5px 0;background:#b71c1c;content:"";opacity:0;transition:opacity .2s ease}.question-card:hover,.question-card:focus-visible{transform:translateY(-4px);border-color:#f0b7b7;box-shadow:0 15px 30px rgba(127,29,29,.14)}.question-card:hover::before,.question-card:focus-visible::before{opacity:1}.question-card-label{padding:5px 9px;border-radius:999px;background:#fce8e8;color:#b71c1c;font-size:.67rem;letter-spacing:.06em}.question-card-title{margin-top:14px;color:#1f2937;font-size:1.08rem;font-weight:800;line-height:1.42}.question-card-description{display:block;margin-top:8px;color:#6b7280;font-size:.83rem;line-height:1.5}.question-card-action{color:#b71c1c;transition:gap .2s ease}.question-card:hover .question-card-action{gap:9px}.question-empty-state{border-color:#f3c3c3;background:#fffafa}.question-empty-state h2{color:#1f2937}.analysis-back-button{transition:color .2s ease,transform .2s ease}.analysis-back-button:hover{color:#8e1414;transform:translateX(-3px)}.analysis-filter-panel{padding:23px 25px;border-color:#e5e7eb;border-radius:16px;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.045);animation:agriculture-page-in .36s ease both}.analysis-filter-heading span{color:#b71c1c}.analysis-filter-heading h2{color:#1f2937}.analysis-filter-heading button{border-color:#b71c1c;background:#b71c1c;color:#fff;transition:background .2s ease,transform .2s ease,box-shadow .2s ease}.analysis-filter-heading button:hover{background:#8e1414;transform:translateY(-1px);box-shadow:0 7px 14px rgba(142,20,20,.2)}.analysis-filter-grid select{border-color:#e5e7eb;border-radius:10px;color:#1f2937;transition:border-color .2s ease,box-shadow .2s ease}.analysis-filter-grid select:focus{border-color:#b71c1c;box-shadow:0 0 0 3px rgba(183,28,28,.12)}.analysis-filter-note{color:#6b7280}.analysis-stage,.analysis-placeholder-panel{border-color:#e5e7eb;border-radius:16px;background:#fff;box-shadow:0 7px 22px rgba(15,23,42,.045)}.analysis-stage{color:#b71c1c;transition:transform .2s ease,box-shadow .2s ease}.analysis-stage:hover{transform:translateY(-2px);box-shadow:0 11px 26px rgba(15,23,42,.08)}.analysis-stage strong,.placeholder-panel-heading h2{color:#1f2937}.analysis-stage span,.placeholder-panel-heading p{color:#6b7280}.analysis-stage em{background:#fce8e8;color:#b71c1c}.analysis-selection-summary span{background:#fce8e8;color:#b71c1c}.analysis-placeholder-panel:first-of-type{overflow:hidden}.analysis-placeholder-panel:first-of-type .placeholder-panel-heading{margin:-24px -24px 0;padding:18px 24px;background:linear-gradient(90deg,#b71c1c,#d32f2f);color:#fff}.analysis-placeholder-panel:first-of-type .placeholder-panel-heading h2,.analysis-placeholder-panel:first-of-type .placeholder-panel-heading p{color:#fff}.analysis-chart-skeleton{background:repeating-linear-gradient(0deg,#fff7f7 0,#fff7f7 1px,transparent 1px,54px),linear-gradient(125deg,#fff1f1 25%,#fffafa 25%,#fffafa 50%,#fff1f1 50%,#fff1f1 75%,#fffafa 75%);background-size:auto,38px 38px;animation:chart-loading 1.6s linear infinite}.visualization-renderer{animation:chart-reveal .35s ease both}.visualization-renderer-heading{color:#b71c1c}.visualization-renderer-heading strong{color:#1f2937}.visualization-renderer-heading span{background:#fce8e8;color:#b71c1c}.visualization-kpi{background:linear-gradient(135deg,#fff2f2,#fffafa)}.visualization-kpi strong{color:#b71c1c}.visualization-kpi span{color:#6b7280}.visualization-histogram span{background:#d32f2f}.visualization-unavailable{border-color:#efc4c4;background:#fffafa;color:#6b7280}.insight-icon{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;background:#fce8e8;font-size:1.18rem}.analysis-insight-list li{color:#4b5563}.analysis-insight-list li::before{color:#b71c1c}.analysis-insight-stats span{border:1px solid #fee2e2;background:#fffafa;color:#6b7280}.analysis-insight-stats b{color:#b71c1c}.dataset-debug-metadata div{padding:10px 0;border-bottom:1px solid #f0f1f3}.dataset-debug-metadata div:last-child{border-bottom:0}.dataset-debug-metadata dt{color:#b71c1c}.dataset-debug-metadata dd{color:#1f2937}.analysis-pipeline-message{border-color:#f3c4c4;background:#fffafa;color:#8e1414}.analysis-debug-panel pre{border:1px solid #3a1010;background:#211313;color:#fee2e2}@keyframes agriculture-page-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes chart-loading{0%{background-position:0 0,0 0}100%{background-position:0 54px,76px 0}}@keyframes chart-reveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@media(max-width:900px){.agriculture-dashboard-hero,.agriculture-detail-hero{padding:38px}.question-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.agriculture-dashboard-page{padding:14px}.agriculture-dashboard-hero,.agriculture-detail-hero{padding:28px 24px;border-radius:20px}.agriculture-hero-title{align-items:flex-start}.agriculture-hero-icon{width:46px;height:46px;flex:0 0 46px;border-radius:14px}.agriculture-hero-title h1{font-size:2.1rem}.question-card-grid{grid-template-columns:1fr;gap:13px}.question-card{min-height:184px}.analysis-filter-panel{padding:19px}.analysis-placeholder-panel{padding:20px}.analysis-placeholder-panel:first-of-type .placeholder-panel-heading{margin:-20px -20px 0;padding:16px 20px}.visualization-renderer-heading{align-items:flex-start}.visualization-renderer-heading span{margin-left:0}.analysis-stage-grid{gap:11px}}
+
+/* ==========================================
+   CUSTOM ASISTEN AI DATA MODAL/POPUP OVERLAY
+   ========================================== */
+.data-question-assistant.has-modal {
+  min-height: 320px;
+}
+
+.data-question-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9); /* Clean light overlay */
+  backdrop-filter: blur(5px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start; /* Near the top */
+  justify-content: center;
+  border-radius: 22px; /* Matches .panel border-radius */
+  padding: 24px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.data-question-modal {
+  background: #ffffff;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px -10px rgba(183, 28, 28, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.data-question-modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.data-question-modal h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f2937;
+  font-family: var(--font-display), sans-serif;
+}
+
+.data-question-modal-message {
+  margin: 0 0 12px !important;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.data-question-modal-hint {
+  font-size: 0.82rem;
+  color: #6b7280 !important;
+  margin: 0 0 20px !important;
+  line-height: 1.45;
+}
+
+.data-question-modal-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-understand {
+  padding: 10px 24px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #b71c1c;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-understand:hover {
+  background: #991b1b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(183, 28, 28, 0.3);
+}
+
+.btn-understand:active {
+  transform: translateY(0);
+}
+
