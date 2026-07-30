@@ -12,12 +12,7 @@ import {
   PersonStanding,
   HandCoins,
   AlertTriangle,
-  ShieldCheck,
-  ArrowRight,
-  Clock3,
-  LayoutDashboard,
-  Network,
-  Sparkles
+  ShieldCheck
 } from "lucide-react";
 import { renderOrgChart } from "./charts";
 
@@ -211,9 +206,6 @@ if (normalizedSearch && !title.includes(normalizedSearch)) return false;
   }, {})).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   const activeThemeDashboard = THEME_DASHBOARD_CARDS[dashboardSlide];
-  const latestDatasets = [...allDatasets]
-    .sort((left, right) => new Date(right.updated_at || right.created_at || 0) - new Date(left.updated_at || left.created_at || 0))
-    .slice(0, 4);
 
   function moveDashboardSlide(direction) {
     setDashboardSlide(current => (current + direction + THEME_DASHBOARD_CARDS.length) % THEME_DASHBOARD_CARDS.length);
@@ -249,19 +241,14 @@ if (normalizedSearch && !title.includes(normalizedSearch)) return false;
 
         <div className="hero-grid">
           <div className="hero-copy">
-            <span className="hero-eyebrow"><Sparkles size={14} aria-hidden="true" /> PORTAL DATA PEMERINTAH ACEH</span>
+            <span className="hero-eyebrow"></span>
             <h1>Data Terbuka untuk Aceh yang Lebih Terukur</h1>
-            <p>Akses satu pintu untuk dataset, dashboard, infografik, dan produk statistik resmi dari perangkat daerah Aceh—siap dipakai untuk layanan publik, perencanaan, dan keputusan berbasis data.</p>
+            <p>Akses satu pintu untuk dataset, dashboard, infografik, dan produk statistik resmi dari perangkat daerah Aceh.</p>
 
             <form className="hero-search" onSubmit={handleSearchSubmit}>
               <input id="searchInput" type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari Data Statistik..." aria-label="Cari dataset" />
               <button type="submit">Cari</button>
             </form>
-
-            <div className="hero-primary-actions">
-              <a href="#datasets" className="hero-primary-action">Jelajahi Dataset <ArrowRight size={17} /></a>
-              <a href="#dashboards" className="hero-secondary-action"><LayoutDashboard size={17} /> Lihat Dashboard</a>
-            </div>
 
             {search.trim() && (
               <div className="hero-search-results" aria-live="polite">
@@ -345,21 +332,6 @@ if (normalizedSearch && !title.includes(normalizedSearch)) return false;
         </div>
       </section>
 
-      <section className="landing-trust-strip" aria-label="Keunggulan Portal Satu Data Aceh">
-        <div><ShieldCheck size={21} aria-hidden="true" /><span><strong>Sumber resmi</strong> Data dari perangkat daerah Aceh</span></div>
-        <div><Clock3 size={21} aria-hidden="true" /><span><strong>Diperbarui berkala</strong> Katalog disegarkan dari portal sumber</span></div>
-        <div><Network size={21} aria-hidden="true" /><span><strong>Terintegrasi</strong> Jelajahi data lintas instansi dalam satu tempat</span></div>
-      </section>
-
-      <section className="landing-start-section" aria-labelledby="landing-start-title">
-        <div className="landing-section-copy"><span>MULAI MENJELAJAH</span><h2 id="landing-start-title">Temukan data sesuai kebutuhan Anda</h2><p>Pilih cara penelusuran yang paling nyaman, kemudian lanjutkan ke visualisasi dan metadata dataset sumber.</p></div>
-        <div className="landing-start-grid">
-          <a href="#datasets" className="landing-start-card"><span className="landing-start-icon"><Search size={22} /></span><div><h3>Cari Dataset</h3><p>Telusuri katalog data sektoral Aceh.</p></div><ArrowRight size={19} /></a>
-          <a href="?page=all-orgs" className="landing-start-card"><span className="landing-start-icon"><Landmark size={22} /></span><div><h3>Jelajah Instansi</h3><p>Lihat data yang diterbitkan tiap OPD.</p></div><ArrowRight size={19} /></a>
-          <a href="?page=topic&topic=Semua" className="landing-start-card"><span className="landing-start-icon"><LayoutDashboard size={22} /></span><div><h3>Jelajah Topik</h3><p>Masuk lewat bidang dan kebutuhan informasi.</p></div><ArrowRight size={19} /></a>
-        </div>
-      </section>
-
       <section className="topic-instansi">
         <div className="topic-panel">
           <div className="panel-head">
@@ -396,12 +368,6 @@ if (normalizedSearch && !title.includes(normalizedSearch)) return false;
           </ul>
         </div>
       </section>
-
-      {latestDatasets.length > 0 && <section className="landing-latest" aria-labelledby="latest-dataset-title">
-        <div className="landing-latest-heading"><div><span>PEMBARUAN KATALOG</span><h2 id="latest-dataset-title">Dataset terbaru</h2></div><a href="#datasets">Lihat seluruh katalog <ArrowRight size={16} /></a></div>
-        <div className="landing-latest-grid">{latestDatasets.map(dataset => <a key={dataset.uuid} className="landing-latest-card" href={`?dataset=${dataset.uuid}`}><small>{dataset.organisasi?.nama || "OPD tidak tercantum"}</small><strong>{dataset.judul || "Tanpa judul"}</strong><span>{dataset.satuan || dataset.topik?.nama || "Lihat detail dataset"}</span></a>)}</div>
-      </section>}
-
 
       <div className="grid" id="datasets" ref={datasetCatalogRef}>
         <div className="panel wide">
