@@ -22,6 +22,23 @@ test("pipeline memakai data numerik sumber untuk insight dan chart", () => {
   assert.equal(chart.data[0].value, 130);
 });
 
+test("perbandingan antar-tahun memakai agregasi nilai asli per tahun", () => {
+  const processed = preprocessDataset(rows);
+  const comparison = selectYearComparison(processed, {
+    year: "2024",
+    comparisonYear: "2023-2024",
+    region: "Seluruh Aceh",
+    commodity: "Semua komoditas"
+  });
+
+  assert.equal(comparison.status, "ready");
+  assert.equal(comparison.type, "line");
+  assert.deepEqual(comparison.data, [
+    { label: 2023, value: 220, year: 2023 },
+    { label: 2024, value: 240, year: 2024 }
+  ]);
+});
+
 test("dataset matcher memilih metadata portal yang relevan", () => {
   const result = matchDataset({ keywords: ["kemiskinan", "kabupaten"] }, [
     { uuid: "jalan", judul: "Panjang Jalan Kabupaten", deskripsi: "Infrastruktur" },

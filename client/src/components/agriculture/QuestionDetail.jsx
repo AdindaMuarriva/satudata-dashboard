@@ -27,6 +27,33 @@ function defaultComparisonYear(years) {
   return sorted.length > 1 ? `${sorted[0]}-${sorted.at(-1)}` : "";
 }
 
+async function fetchAllDatasetPeriods(datasetId) {
+  const initial = await fetchDatasetValues(datasetId, "");
+  const metadataYears = normalizeYears(initial.years);
+  if (!metadataYears.length) return { ...initial, years: metadataYears };
+
+  // Beberapa datasource hanya mengembalikan satu periode saat parameter tahun
+  // kosong. Lengkapi periode yang belum terbaca supaya chart tahun memakai
+  // nilai asli setiap tahun pada dataset yang dipilih.
+  const loadedYears = new Set(yearsFromRows(initial.rows));
+  const missingYears = metadataYears.filter((year) => !loadedYears.has(year));
+  if (!missingYears.length) return { ...initial, years: metadataYears };
+
+  const periodResponses = await Promise.all(
+    missingYears.map((year) => fetchDatasetValues(datasetId, year))
+  );
+  const periodRows = periodResponses.flatMap((response, index) => response.rows.map((row) => {
+    // Ada datasource yang hanya mengirim nilai tanpa kolom tahun, walaupun
+    // tahun sudah dipilih lewat parameter API. Tambahkan penanda periode dari
+    // request agar data tidak salah digabung sebagai satu tahun yang sama.
+    return yearsFromRows([row]).length ? row : { ...row, tahun: missingYears[index] };
+  }));
+  return {
+    rows: loadedYears.size ? [...initial.rows, ...periodRows] : periodRows,
+    years: metadataYears,
+  };
+}
+
 export default function QuestionDetail({ question, onBack, analysisLabel = "ANALISIS PERTANIAN" }) {
   const chartRecommendation = question.recommendedChart === "Peta Aceh" ? DEFAULT_FILTERS.visualization : question.recommendedChart || DEFAULT_FILTERS.visualization;
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, visualization: chartRecommendation }));
@@ -71,7 +98,7 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
         if (!datasetId) throw new Error("Dataset sumber tidak memiliki ID yang valid.");
         // Ambil semua periode agar visualisasi perbandingan antar-tahun selalu
         // memakai data terbaru, sementara chart utama tetap difilter di renderer.
-        let response = await fetchDatasetValues(datasetId, "");
+        let response = await fetchAllDatasetPeriods(datasetId);
         const metadataYears = normalizeYears(response.years);
         if (metadataYears.length) {
           setAvailableYears(metadataYears);

@@ -124,7 +124,7 @@ export function selectYearComparison(preprocessingResult, filters = {}) {
     return { status: "unavailable", message: "Dataset ini tidak memiliki kolom tahun, sehingga perbandingan antar-tahun belum dapat dibuat." };
   }
 
-  const rows = filterRows(sourceRows, { ...filters, year: "" });
+  let rows = filterRows(sourceRows, { ...filters, year: "" });
   const years = [...new Set(rows.map(row => String(row.tahun ?? "").match(/\b(19|20)\d{2}\b/)?.[0]).filter(Boolean))]
     .sort((left, right) => Number(left) - Number(right));
 
@@ -140,6 +140,13 @@ export function selectYearComparison(preprocessingResult, filters = {}) {
 
   const rangeMatch = String(filters.comparisonYear || "").match(/^(\d{4})-(\d{4})$/);
   const rangeYears = rangeMatch ? [rangeMatch[1], rangeMatch[2]] : [];
+  if (rangeYears.length) {
+    const [startYear, endYear] = rangeYears.map(Number);
+    rows = rows.filter((row) => {
+      const year = Number(String(row.tahun ?? "").match(/\b(19|20)\d{2}\b/)?.[0]);
+      return Number.isFinite(year) && year >= startYear && year <= endYear;
+    });
+  }
 
   const valueColumn = structure.primaryValueColumn;
   const data = valueColumn
@@ -164,7 +171,7 @@ export function selectYearComparison(preprocessingResult, filters = {}) {
     unit: valueColumn ? datasetUnit(rows) : "observasi",
     highlightYears: [...new Set([filters.year, ...rangeYears].filter(Boolean).map(Number))],
     notice: rangeYears.length
-      ? `Seluruh tahun tersedia ditampilkan dalam rentang ${rangeYears[0]}–${rangeYears[1]}.`
+      ? `Nilai asli setiap tahun pada rentang ${rangeYears[0]}–${rangeYears[1]} ditampilkan.`
       : "Grafik ini memakai seluruh tahun yang tersedia pada dataset dan otomatis diperbarui saat data baru ditambahkan."
   };
 }

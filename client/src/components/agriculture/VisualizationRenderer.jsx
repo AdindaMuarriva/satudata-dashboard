@@ -18,14 +18,23 @@ export default function VisualizationRenderer({ preprocessingResult, filters, ye
   const containerRef = useRef(null);
   const trendRef = useRef(null);
   const mapRef = useRef(null);
-  const model = useMemo(() => selectVisualization(preprocessingResult, mapOnly ? { ...filters, visualization: "Peta Aceh" } : filters), [preprocessingResult, filters, mapOnly]);
+  const model = useMemo(() => {
+    if (yearComparison) return selectYearComparison(preprocessingResult, filters);
+    return selectVisualization(preprocessingResult, mapOnly ? { ...filters, visualization: "Peta Aceh" } : filters);
+  }, [preprocessingResult, filters, yearComparison, mapOnly]);
 
   useEffect(() => {
     if (model.status !== "ready") return;
     const tooltip = document.querySelector(".tooltip");
     if (model.type === "bar" && containerRef.current) renderBarChart(containerRef.current, model.data, model.unit || model.valueColumn, tooltip);
     if ((model.type === "pie" || model.type === "donut") && containerRef.current) renderDonutChart(containerRef.current, model.data, tooltip, { donut: model.type === "donut", unit: model.unit });
-    if (model.type === "line" && trendRef.current) renderTrendChart(trendRef.current, model.data, model.unit || model.valueColumn, tooltip);
+    if (model.type === "line" && trendRef.current) renderTrendChart(
+      trendRef.current,
+      model.data,
+      model.unit || model.valueColumn,
+      tooltip,
+      { highlightYears: model.highlightYears || [] }
+    );
     if (model.type === "map" && mapRef.current) renderRegionalChoropleth(mapRef.current, model.data, model.unit || model.valueColumn, tooltip).catch(error => console.error("[Visualization] Gagal merender Peta Aceh:", error));
     console.log("[Visualization] Data dikirim ke renderer:", { type: model.type, sourceRows: model.sourceRowCount, renderedPoints: model.renderedDataCount });
   }, [model]);
