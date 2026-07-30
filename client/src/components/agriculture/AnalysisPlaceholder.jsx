@@ -22,6 +22,11 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 }
 
+function datasetUnits(preprocessingResult) {
+  const units = [...new Set((preprocessingResult?.cleanedData || []).map(row => row.satuan).filter(Boolean))];
+  return units.length ? units.join(", ") : "Tidak tercantum";
+}
+
 export default function AnalysisPlaceholder({ filters, selectedDataset, matchResult, preprocessingResult, pipelineStatus, pipelineError, pipelineNotice }) {
   const VisualizationIcon = VISUALIZATION_ICONS[filters.visualization] || BarChart3;
   const insight = useMemo(() => generateInsights(preprocessingResult, filters), [preprocessingResult, filters]);
@@ -81,8 +86,8 @@ export default function AnalysisPlaceholder({ filters, selectedDataset, matchRes
           {Object.keys(insight.statistics).length ? <div className="analysis-insight-stats"><span>Total <b>{new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(insight.statistics.total)}</b></span><span>Rata-rata <b>{new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(insight.statistics.average)}</b></span><span>Data <b>{insight.statistics.dataCount}</b></span><span>Kategori <b>{insight.statistics.categoryCount}</b></span></div> : null}
         </article>
         <article className="analysis-placeholder-panel">
-          <div className="placeholder-panel-heading"><Database size={23} aria-hidden="true" /><div><h2>Metadata Dataset</h2><p>Dataset sumber untuk periode {filters.year}, OPD, satuan, dan langkah pengolahan akan dicantumkan di sini.</p></div></div>
-          {selectedDataset ? <dl className="dataset-debug-metadata"><div><dt>Dataset sumber visualisasi</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>OPD / instansi</dt><dd>{selectedDataset.organisasi?.nama || "Belum tercantum"}</dd></div><div><dt>Periode yang dibaca</dt><dd>{filters.year || "Seluruh periode yang tersedia"}</dd></div><div><dt>Satuan</dt><dd>{selectedDataset.satuan || selectedDataset.pengukuran || "Mengikuti kolom dataset"}</dd></div><div><dt>Pembaruan terakhir</dt><dd>{formatDate(selectedDataset.updated_at || selectedDataset.original_updated_at || selectedDataset.created_at)}</dd></div><div><dt>Metode pembacaan</dt><dd>Nilai ditampilkan dari baris dataset yang tersedia; total/rata-rata mengikuti tipe indikator.</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>Portal Satu Data Aceh</dd></div></dl> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
+          <div className="placeholder-panel-heading"><Database size={23} aria-hidden="true" /><div><h2>Metadata Dataset</h2><p>Identitas, cakupan, dan baris sumber yang dipakai dalam analisis ini.</p></div></div>
+          {selectedDataset ? <dl className="dataset-debug-metadata"><div><dt>Dataset sumber visualisasi</dt><dd>{selectedDataset.title || selectedDataset.judul || "Tanpa judul"}</dd></div><div><dt>OPD / instansi</dt><dd>{selectedDataset.organisasi?.nama || "Belum tercantum"}</dd></div><div><dt>Periode yang dibaca</dt><dd>{filters.year || "Seluruh periode yang tersedia"}</dd></div><div><dt>Satuan data</dt><dd>{datasetUnits(preprocessingResult) || selectedDataset.satuan || selectedDataset.pengukuran || "Tidak tercantum"}</dd></div><div><dt>Baris dianalisis</dt><dd>{preprocessingResult?.cleanedData?.length ?? 0} dari {preprocessingResult?.preprocessingMetadata?.inputRows ?? 0} baris sumber</dd></div><div><dt>Kolom yang digunakan</dt><dd>{preprocessingResult?.datasetStructure?.columns?.join(", ") || "Belum terdeteksi"}</dd></div><div><dt>Pembaruan terakhir</dt><dd>{formatDate(selectedDataset.updated_at || selectedDataset.original_updated_at || selectedDataset.created_at)}</dd></div><div><dt>Metode pembacaan</dt><dd>Nilai dihitung dari baris dataset setelah pembersihan duplikasi dan data kosong.</dd></div><div><dt>Skor kecocokan</dt><dd>{matchResult?.score ?? 0}%</dd></div><div><dt>Sumber</dt><dd>Portal Satu Data Aceh</dd></div></dl> : <div className="placeholder-lines"><span></span><span></span><span></span></div>}
         </article>
       </section>
     </>

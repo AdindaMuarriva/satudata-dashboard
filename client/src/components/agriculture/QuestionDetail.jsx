@@ -5,6 +5,7 @@ import AnalysisFilters from "./AnalysisFilters";
 import { CONFIG, fetchDatasetValues, fetchDatasetsMultiPage } from "../../api";
 import { matchDataset } from "../../analysis/datasetMatcher";
 import { preprocessDataset } from "../../preprocessing/preprocessDataset";
+import { getDatasetFilterOptions } from "../../analysis/visualizationEngine";
 
 const DEFAULT_FILTERS = { year: String(new Date().getFullYear()), comparisonYear: "", region: "Seluruh Aceh", commodity: "Semua komoditas", visualization: "Bar Chart" };
 
@@ -66,6 +67,7 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
   const [availableYears, setAvailableYears] = useState([]);
   const [refreshToken, setRefreshToken] = useState(0);
   const resolvedQuestionRef = useRef(null);
+  const availableFilters = getDatasetFilterOptions(preprocessingResult);
 
   useEffect(() => {
     const refresh = () => setRefreshToken(current => current + 1);
@@ -168,7 +170,7 @@ export default function QuestionDetail({ question, onBack, analysisLabel = "ANAL
   return <main className="agriculture-dashboard-page">
     <button type="button" className="analysis-back-button dashboard-back-button" onClick={onBack}><ArrowLeft size={18} aria-hidden="true" /> Kembali ke Daftar Pertanyaan</button>
     <section className="agriculture-detail-hero"><span>{analysisLabel}</span><h1>{question.title}</h1><p>Chart dan penjelasan dibuat hanya dari baris data dataset sumber yang tersedia di Portal Satu Data Aceh.</p></section>
-    <AnalysisFilters filters={filters} availableYears={availableYears} onChange={(key, value) => setFilters(current => {
+    <AnalysisFilters filters={filters} availableYears={availableYears} availableFilters={availableFilters} onChange={(key, value) => setFilters(current => {
       if (key !== "year") return { ...current, [key]: value };
       const comparisonYear = defaultComparisonYear(availableYears);
       return { ...current, year: value, comparisonYear };

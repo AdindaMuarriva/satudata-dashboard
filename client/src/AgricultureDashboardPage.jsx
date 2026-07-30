@@ -3,7 +3,7 @@ import { ArrowLeft, Sprout } from "lucide-react";
 import QuestionCategory from "./components/agriculture/QuestionCategory";
 import QuestionDetail from "./components/agriculture/QuestionDetail";
 import QuestionSearch from "./components/agriculture/QuestionSearch";
-import { AGRICULTURE_QUESTION_CATEGORIES, AGRICULTURE_QUESTIONS, createDatasetQuestions } from "./config/questions/agricultureQuestions";
+import { AGRICULTURE_QUESTION_CATEGORIES, createDatasetQuestions } from "./config/questions/agricultureQuestions";
 import { CONFIG, fetchDatasetsMultiPage, isAgricultureRelevant } from "./api";
 import DataQuestionAssistant from "./components/DataQuestionAssistant";
 
@@ -12,7 +12,9 @@ export default function AgricultureDashboardPage() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [datasetQuestions, setDatasetQuestions] = useState([]);
   const [datasets, setDatasets] = useState([]);
-  const allQuestions = useMemo(() => [...AGRICULTURE_QUESTIONS, ...datasetQuestions], [datasetQuestions]);
+  // Pertanyaan hanya dibuat setelah dataset portal termuat agar tidak ada
+  // indikator contoh yang tampil tanpa dataset sumber yang sesuai.
+  const allQuestions = useMemo(() => datasetQuestions, [datasetQuestions]);
   const visibleCategories = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase("id-ID");
     const questions = term

@@ -54,6 +54,20 @@ function distinctValueCount(rows, column) {
   return new Set(rows.map(row => row[column]).filter(value => value !== undefined && value !== null && value !== "")).size;
 }
 
+// Filter hanya ditampilkan bila dimensinya benar-benar ada pada dataset aktif.
+// Ini mencegah pilihan contoh seperti "Padi" atau "Aceh Besar" muncul pada
+// dataset yang tidak memiliki kolom tersebut.
+export function getDatasetFilterOptions(preprocessingResult) {
+  const rows = preprocessingResult?.cleanedData || [];
+  const valuesFor = (column) => [...new Set(rows.map(row => row[column]).filter(value => value !== undefined && value !== null && value !== ""))]
+    .map(String).sort((left, right) => left.localeCompare(right, "id-ID"));
+  return {
+    regions: valuesFor("kabupaten"),
+    commodities: valuesFor("komoditas"),
+    categories: valuesFor("kategori")
+  };
+}
+
 function selectLabelColumn(rows, structure, { allowYear = false } = {}) {
   const preferred = ["kabupaten", "kecamatan", "desa", "komoditas", "kategori", ...(structure.categoryColumns || [])];
   const candidates = [...new Set(preferred)]

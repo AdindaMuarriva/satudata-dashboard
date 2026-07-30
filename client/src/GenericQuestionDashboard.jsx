@@ -15,21 +15,21 @@ function slug(value) {
   return String(value).toLocaleLowerCase("id-ID").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/(^-|-$)/g, "") || "lainnya";
 }
 
-function hasPeriodMetadata(dataset) {
-  return /tahun|year|periode|tren|perkembangan/i.test([dataset.judul, dataset.deskripsi, dataset.dimensi, dataset.pengukuran].filter(Boolean).join(" "));
-}
-
 function createDatasetQuestions(datasets, themeLabel) {
   return datasets.flatMap(dataset => {
     const datasetTitle = String(dataset.judul || "dataset").replace(/\s+/g, " ").trim();
     const category = slug(getCategoryName(dataset, `${themeLabel} lainnya`));
     const keywords = datasetTitle.split(/\s+/).filter(word => word.length > 2);
     const base = { category, datasetUuid: dataset.uuid, keywords, expectedDatasetType: "dataset_portal" };
-    return [
-      { ...base, id: `${dataset.uuid}-overview`, title: dataset.dashboardQuestion || `Bagaimana gambaran ${datasetTitle}?`, description: dataset.dashboardQuestionDescription || `Menampilkan nilai, perbandingan, dan kategori yang tersedia pada dataset ${datasetTitle}.`, recommendedChart: "Bar Chart" },
-      { ...base, id: `${dataset.uuid}-comparison`, title: `Wilayah atau kategori mana yang memiliki nilai tertinggi pada ${datasetTitle}?`, description: `Menyusun peringkat berdasarkan data ${datasetTitle}.`, recommendedChart: "Bar Chart" },
-      ...(hasPeriodMetadata(dataset) ? [{ ...base, id: `${dataset.uuid}-trend`, title: `Bagaimana perkembangan ${datasetTitle} antar periode?`, description: `Meninjau perubahan data ${datasetTitle} pada periode yang tersedia.`, recommendedChart: "Line Chart" }] : [])
-    ];
+    // Jangan mengasumsikan dataset memiliki wilayah, kategori, atau lebih dari
+    // satu periode. Satu pertanyaan ini selalu merujuk ke dataset yang tepat.
+    return [{
+      ...base,
+      id: `${dataset.uuid}-overview`,
+      title: dataset.dashboardQuestion || `Tampilkan data ${datasetTitle}.`,
+      description: dataset.dashboardQuestionDescription || dataset.deskripsi || `Menampilkan data yang tersedia pada dataset ${datasetTitle}.`,
+      recommendedChart: "Bar Chart"
+    }];
   });
 }
 

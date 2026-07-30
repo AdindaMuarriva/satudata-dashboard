@@ -4,7 +4,7 @@ import { CONFIG, fetchDatasetsMultiPage, isInfrastructureRelevant } from "./api"
 import QuestionCategory from "./components/agriculture/QuestionCategory";
 import QuestionDetail from "./components/agriculture/QuestionDetail";
 import QuestionSearch from "./components/agriculture/QuestionSearch";
-import { INFRASTRUCTURE_QUESTION_CATEGORIES, INFRASTRUCTURE_QUESTIONS, createInfrastructureDatasetQuestions } from "./config/questions/infrastructureQuestions";
+import { INFRASTRUCTURE_QUESTION_CATEGORIES, createInfrastructureDatasetQuestions } from "./config/questions/infrastructureQuestions";
 import DataQuestionAssistant from "./components/DataQuestionAssistant";
 
 export default function InfrastructureDashboardPage() {
@@ -12,7 +12,8 @@ export default function InfrastructureDashboardPage() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [datasetQuestions, setDatasetQuestions] = useState([]);
   const [datasets, setDatasets] = useState([]);
-  const allQuestions = useMemo(() => [...INFRASTRUCTURE_QUESTIONS, ...datasetQuestions], [datasetQuestions]);
+  // Pertanyaan hanya dibuat dari metadata dataset yang tersedia di portal.
+  const allQuestions = useMemo(() => datasetQuestions, [datasetQuestions]);
   const visibleCategories = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase("id-ID");
     const questions = term ? allQuestions.filter(question => `${question.title} ${question.description}`.toLocaleLowerCase("id-ID").includes(term)) : allQuestions;

@@ -23,6 +23,22 @@ export function getQuestionIntent(question = "") {
   };
 }
 
+// Pastikan bentuk data mendukung kebutuhan yang disebut pengguna sebelum
+// jawaban atau chart dibuat. Tidak ada fallback ke data yang tidak relevan.
+export function validateQuestionAgainstDataset(question, preprocessingResult) {
+  const intent = getQuestionIntent(question);
+  const structure = preprocessingResult?.datasetStructure;
+  const rows = preprocessingResult?.cleanedData || [];
+  if (!rows.length || !structure) return "Dataset belum memiliki baris data yang dapat dianalisis.";
+  if (intent.asksRegion && !structure.hasKabupaten) return "Pertanyaan meminta data kabupaten/kota, tetapi dataset ini tidak memiliki kolom kabupaten/kota.";
+  if (intent.asksCategory && !structure.hasCategory) return "Pertanyaan meminta kategori atau komoditas, tetapi dataset ini tidak memiliki kolom kategori yang sesuai.";
+  if (intent.asksTrend) {
+    const years = new Set(rows.map(row => String(row.tahun || "")).filter(Boolean));
+    if (!structure.hasTahun || years.size < 2) return "Pertanyaan meminta perkembangan antar-periode, tetapi dataset ini tidak memiliki minimal dua periode data.";
+  }
+  return "";
+}
+
 // Jawaban inti selalu dibentuk dari label dan nilai hasil agregasi, bukan dari
 // keluaran model bahasa. Dengan begitu "kabupaten mana" tidak dapat berubah
 // menjadi jawaban berupa angka atau nama indikator.

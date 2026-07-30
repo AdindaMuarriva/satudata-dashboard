@@ -4,7 +4,7 @@ import { CONFIG, fetchDatasetsMultiPage, isSocialRelevant } from "./api";
 import QuestionCategory from "./components/agriculture/QuestionCategory";
 import QuestionDetail from "./components/agriculture/QuestionDetail";
 import QuestionSearch from "./components/agriculture/QuestionSearch";
-import { SOCIAL_QUESTION_CATEGORIES, SOCIAL_QUESTIONS, createSocialDatasetQuestions } from "./config/questions/socialQuestions";
+import { SOCIAL_QUESTION_CATEGORIES, createSocialDatasetQuestions } from "./config/questions/socialQuestions";
 import DataQuestionAssistant from "./components/DataQuestionAssistant";
 
 export default function SocialDashboardPage() {
@@ -12,7 +12,8 @@ export default function SocialDashboardPage() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [datasetQuestions, setDatasetQuestions] = useState([]);
   const [datasets, setDatasets] = useState([]);
-  const allQuestions = useMemo(() => [...SOCIAL_QUESTIONS, ...datasetQuestions], [datasetQuestions]);
+  // Pertanyaan hanya dibuat dari metadata dataset yang tersedia di portal.
+  const allQuestions = useMemo(() => datasetQuestions, [datasetQuestions]);
   const visibleCategories = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase("id-ID");
     const questions = term ? allQuestions.filter(question => `${question.title} ${question.description}`.toLocaleLowerCase("id-ID").includes(term)) : allQuestions;

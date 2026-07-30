@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { preprocessDataset } from "../src/preprocessing/preprocessDataset.js";
 import { generateInsights } from "../src/analysis/insightGenerator.js";
-import { selectVisualization, selectYearComparison } from "../src/analysis/visualizationEngine.js";
+import { getDatasetFilterOptions, selectVisualization, selectYearComparison } from "../src/analysis/visualizationEngine.js";
 import { matchDataset } from "../src/analysis/datasetMatcher.js";
-import { buildQuestionAnswer } from "../src/analysis/questionAnswer.js";
+import { buildQuestionAnswer, validateQuestionAgainstDataset } from "../src/analysis/questionAnswer.js";
 
 const rows = [
   { "Kab/Kota": "Aceh Besar", Tahun: "2023", Nilai: "120", Satuan: "orang" },
@@ -55,4 +55,29 @@ test("dataset matcher memilih metadata portal yang relevan", () => {
   ]);
   assert.equal(result.status, "matched");
   assert.equal(result.dataset.uuid, "miskin");
+});
+
+test("filter wilayah dibuat dari nilai dataset, bukan daftar contoh", () => {
+  const processed = preprocessDataset(rows);
+  assert.deepEqual(getDatasetFilterOptions(processed), {
+    regions: ["Aceh Besar", "Aceh Utara"],
+    commodities: [],
+    categories: []
+  });
+});
+
+test("pertanyaan ditolak bila struktur dataset tidak mendukungnya", () => {
+  const oneYear = preprocessDataset(rows.filter(row => row.Tahun === "2024"));
+  assert.match(validateQuestionAgainstDataset("Bagaimana perkembangan data dari tahun ke tahun?", oneYear), /minimal dua periode/);
+  assert.match(validateQuestionAgainstDataset("Komoditas apa yang terbesar?", oneYear), /kategori atau komoditas/);
+
+  const provincial = preprocessDataset([{ Tahun: "2024", Nilai: "42", Satuan: "persen" }]);
+  assert.match(validateQuestionAgainstDataset("Kabupaten mana yang tertinggi?", provincial), /kabupaten\/kota/);
+});
+
+test("dataset dengan kecocokan kata yang terlalu rendah tidak dipilih", () => {
+  const result = matchDataset({ keywords: ["jalan", "abc", "def", "ghi", "jkl"] }, [
+    { uuid: "jalan", judul: "Panjang Jalan", deskripsi: "Data infrastruktur" }
+  ]);
+  assert.equal(result.status, "no_match");
 });
