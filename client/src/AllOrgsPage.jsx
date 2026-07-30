@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchDatasetsMultiPage } from "./api";
 import { ArrowLeft } from "lucide-react";
+import SkeletonCard from "./components/SkeletonCard";
 
 export default function AllOrgsPage() {
   const [orgCounts, setOrgCounts] = useState([]);

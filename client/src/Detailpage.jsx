@@ -8,7 +8,8 @@ import {
   renderBarChart, renderRankingChart, renderColorLegend,
   renderChoroplethMap, renderTrendChart
 } from "./charts";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
+import { exportToCsv } from "./utils/csvExporter"; // Asumsi file dibuat di src/utils/
 
 export default function DetailPage({ uuid, tooltipRef }) {
   const [meta, setMeta] = useState(null);
